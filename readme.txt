@@ -46,9 +46,13 @@ Drag the BrowserID widget to for example your side bar. The widget contains the 
 
 == Frequently Asked Questions ==
 
+= Which server does verify the assertion? =
+
+The assertion is verified by the server at https://browserid.org/verify.
+
 = Where can I ask questions, report bugs and request features? =
 
-You can ask for support on the [forum page](http://wordpress.org/tags/browserid?forum_id=10 "Forum")
+You can ask for support on the [forum page](http://wordpress.org/tags/browserid?forum_id=10 "Forum").
 
 == Screenshots ==
 
@@ -72,4 +76,4 @@ First public release
 
 This plugin uses:
 
-* The client side [BrowserID script](https://browserid.org/include.js "BrowserID script")
+* The client side [BrowserID script](https://browserid.org/include.js "BrowserID script").
