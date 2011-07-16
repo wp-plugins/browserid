@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: Mozilla BrowserID
+Plugin Name: BrowserID
 Plugin URI: http://wordpress.org/extend/plugins/browserid/
 Description: BrowserID provides a safer and easier way to sign in
 Version: 0.2
