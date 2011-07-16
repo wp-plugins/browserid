@@ -16,7 +16,7 @@ This plugin adds a BrowserID login button to your login page. There is also a wi
 
 [BrowserID](https://browserid.org/ "BrowserID") is an open source experiment from the [Identity Team](http://identity.mozilla.com/ "Identity Team") at [Mozilla Labs](https://mozillalabs.com/ "Mozilla Labs").
 
-**BrowserID and this plugin are experimental !**
+**BrowserID and this plugin are experimental!**
 
 Please report any issue you have with this plugin on the [forum page](http://wordpress.org/tags/browserid?forum_id=10 "Forum"), so I can at least try to fix it.
 If you rate this plugin low, please [let me know why](http://blog.bokhorst.biz/contact/ "Marcel's weblog").
