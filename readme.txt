@@ -1,10 +1,10 @@
-=== BrowserID ===
+=== Mozilla BrowserID ===
 Contributors: Marcel Bokhorst
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB7DGNA3MJ&lc=US&item_name=BrowserID%20WordPress%20plugin&item_number=Marcel%20Bokhorst&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
 Tags: security, admin, authentication, access, widget, login
 Requires at least: 3.2
 Tested up to: 3.2.1
-Stable tag: 0.1
+Stable tag: 0.2
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -61,6 +61,11 @@ You can ask for support on the [forum page](http://wordpress.org/tags/browserid?
 
 == Changelog ==
 
+= 0.2 =
+* Bugfix: custom HTML for login page
+* Added Flemish translation
+* Updated Dutch translation
+
 = 0.1 =
 * Initial version
 
@@ -68,6 +73,9 @@ You can ask for support on the [forum page](http://wordpress.org/tags/browserid?
 * Development version
 
 == Upgrade Notice ==
+
+= 0.2 =
+One bugfix
 
 = 0.1 =
 First public release
