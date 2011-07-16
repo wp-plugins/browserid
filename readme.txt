@@ -1,7 +1,7 @@
 === BrowserID ===
 Contributors: Marcel Bokhorst
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB7DGNA3MJ&lc=US&item_name=BrowserID%20WordPress%20plugin&item_number=Marcel%20Bokhorst&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
-Tags: security, admin, authentication, access
+Tags: security, admin, authentication, access, widget
 Requires at least: 3.2
 Tested up to: 3.2.1
 Stable tag: 0.1
@@ -10,9 +10,10 @@ Implementation of Mozilla BrowserID for WordPress
 
 == Description ==
 
-[BrowserID](https://browserid.org/ "BrowserID") is an open source experiment
-from the [Identity Team](http://identity.mozilla.com/ "Identity Team")
-at [Mozilla Labs](https://mozillalabs.com/ "Mozilla Labs").
+[BrowserID](https://browserid.org/ "BrowserID") is an open source experiment from the [Identity Team](http://identity.mozilla.com/ "Identity Team") at [Mozilla Labs](https://mozillalabs.com/ "Mozilla Labs").
+This plugin adds a BrowserID login button to your login page.
+There is also a widget with a login button, which you can add to for example your side bar.
+It is possible to customize the login and logout button/link.
 
 **BrowserID and this plugin are experimental!**
 
@@ -51,7 +52,8 @@ You can ask for support on the [forum page](http://wordpress.org/tags/browserid?
 
 == Screenshots ==
 
-1. BrowserID
+1. BrowserID logo
+1. BrowserID login button
 
 == Changelog ==
 
