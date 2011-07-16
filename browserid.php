@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: BrowserID
+Plugin Name: Mozilla BrowserID
 Plugin URI: http://wordpress.org/extend/plugins/browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.1
+Version: 0.2
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -92,7 +92,7 @@ if (!class_exists('M66BrowserID')) {
 			// I18n
 			load_plugin_textdomain(c_bid_text_domain, false, dirname(plugin_basename(__FILE__)));
 
-			// Login
+			// BrowserID assertion
 			if (isset($_REQUEST['browserid_assertion'])) {
 				// Build URL
 				$url = 'https://browserid.org/verify?assertion=' . $_REQUEST['browserid_assertion'] . '&audience=' . $_SERVER['HTTP_HOST']; //urlencode(get_home_url());
@@ -106,6 +106,7 @@ if (!class_exists('M66BrowserID')) {
 					echo __($response->get_error_message()) . PHP_EOL;
 				}
 				else {
+					// Decode result
 					$result = json_decode($response['body']);
 					if (empty($result) || empty($result->status)) {
 						// No result or status
@@ -151,7 +152,7 @@ if (!class_exists('M66BrowserID')) {
 			return $user;
 		}
 
-		// Define login function
+		// Define login JavaScript function
 		function WP_head() {
 ?>
 			<script type="text/javascript">
@@ -170,6 +171,7 @@ if (!class_exists('M66BrowserID')) {
 
 		// Add login button to login form
 		function Login_form() {
+			$options = get_option('browserid_options');
 			if (empty($options['browserid_login_html']))
 				$html = '<img src="https://browserid.org/i/sign_in_blue.png" style="border: 0;" />';
 			else
@@ -192,31 +194,36 @@ if (!class_exists('M66BrowserID')) {
 		function Admin_init() {
 			register_setting('browserid_options', 'browserid_options', null);
 			add_settings_section('plugin_main', null, array(&$this, 'Options_main'), 'browserid');
-			add_settings_field('browserid_login_html', __('HTML login:', c_bid_text_domain), array(&$this, 'Option_login_html'), 'browserid', 'plugin_main');
-			add_settings_field('browserid_logout_html', __('HTML logout:', c_bid_text_domain), array(&$this, 'Option_logout_html'), 'browserid', 'plugin_main');
+			add_settings_field('browserid_login_html', __('Custom login HTML:', c_bid_text_domain), array(&$this, 'Option_login_html'), 'browserid', 'plugin_main');
+			add_settings_field('browserid_logout_html', __('Custom logout HTML:', c_bid_text_domain), array(&$this, 'Option_logout_html'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_nospsn', __('I don\'t want to support this plugin with the Sustainable Plugins Sponsorship Network:', c_bid_text_domain), array(&$this, 'Option_nospsn'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_debug', __('Debug mode:', c_bid_text_domain), array(&$this, 'Option_debug'), 'browserid', 'plugin_main');
   		}
 
+		// Main options section
 		function Options_main() {
 		}
 
+		// Login HTML option
 		function Option_login_html() {
 			$options = get_option('browserid_options');
 			echo "<input id='browserid_login_html' name='browserid_options[browserid_login_html]' type='text' size='80' value='{$options['browserid_login_html']}' />";
 		}
 
+		// Logout HTML option
 		function Option_logout_html() {
 			$options = get_option('browserid_options');
 			echo "<input id='browserid_logout_html' name='browserid_options[browserid_logout_html]' type='text' size='80' value='{$options['browserid_logout_html']}' />";
 		}
 
+		// SPSN option
 		function Option_nospsn() {
 			$options = get_option('browserid_options');
 			$chk = (isset($options['browserid_nospsn']) && $options['browserid_nospsn'] ? " checked='checked'" : '');
 			echo "<input id='browserid_nospsn' name='browserid_options[browserid_nospsn]' type='checkbox'" . $chk. "/>";
 		}
 
+		// Debug option
 		function Option_debug() {
 			$options = get_option('browserid_options');
 			$chk = (isset($options['browserid_debug']) && $options['browserid_debug'] ? " checked='checked'" : '');
@@ -245,9 +252,10 @@ if (!class_exists('M66BrowserID')) {
 			</div>
 <?php
 			if ($this->debug)
-				echo '<pre>' . print_r($_REQUEST, true) . '</pre>';
+				echo '<br /><pre>' . print_r($_SERVER, true) . '</pre>';
 		}
 
+		// SPSN script
 		function Render_SPSN() {
 			$options = get_option('browserid_options');
 			if (!(isset($options['browserid_nospsn']) && $options['browserid_nospsn'])) {
@@ -293,6 +301,7 @@ class BrowserID_Widget extends WP_Widget {
 		$this->WP_Widget('BrowserID_Widget', 'BrowserID', $widget_ops);
 	}
 
+	// Widget contents
 	function widget($args, $instance) {
 		$options = get_option('browserid_options');
 
@@ -312,14 +321,14 @@ class BrowserID_Widget extends WP_Widget {
 		}
 	}
 
-	// Helper render Facebook comments
-
+	// Update settings
 	function update($new_instance, $old_instance) {
 		$instance = $old_instance;
 		$instance['title'] = strip_tags($new_instance['title']);
 		return $instance;
 	}
 
+	// Render settings
 	function form($instance) {
 		if (empty($instance['title']))
 			$instance['title'] = null;

@@ -12,7 +12,7 @@ msgstr ""
 "Last-Translator: Marcel Bokhorst <marcel@bokhorst.biz>\n"
 "Language-Team: Marcel Bokhorst\n"
 "X-Poedit-Language: Dutch\n"
-"X-Poedit-Country: NETHERLANDS\n"
+"X-Poedit-Country: BELGIUM\n"
 "Plural-Forms: Plural-Forms: nplurals=2; plural=n != 1;\n"
 
 msgid "Verification void"
