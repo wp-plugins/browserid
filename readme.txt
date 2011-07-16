@@ -47,6 +47,10 @@ See my [other plugins](http://wordpress.org/extend/plugins/profile/m66b "Marcel 
 
 The assertion is verified by the server at https://browserid.org/verify.
 
+= I get 'SSL certificate problem, verify that the CA cert is OK' =
+
+Your hosting provider should take a look at the SSL certificates.
+
 = Where can I ask questions, report bugs and request features? =
 
 You can ask for support on the [forum page](http://wordpress.org/tags/browserid?forum_id=10 "Forum").
