@@ -36,7 +36,7 @@ if (version_compare(PHP_VERSION, '5.0.0', '<'))
 define('c_bid_text_domain', 'browserid');
 define('c_bid_option_version', 'bid_version');
 
-require_once('idna_convert.class.php');
+require_once('idna_convert/idna_convert.class.php');
 
 // Define class
 if (!class_exists('M66BrowserID')) {
@@ -117,6 +117,7 @@ if (!class_exists('M66BrowserID')) {
 						// No result or status
 						header('Content-type: text/plain');
 						echo __('Verification void', c_bid_text_domain) . PHP_EOL;
+						echo $result->response->message . PHP_EOL;
 						if ($this->debug)
 							print_r($response);
 					}

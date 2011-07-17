@@ -51,6 +51,11 @@ The assertion is verified by the server at https://browserid.org/verify.
 
 Your hosting provider should take a look at the SSL certificates.
 
+= I get 'Bad Gateway' =
+
+The browserid.org service is still in testing phase.
+Trying again may help.
+
 = Where can I ask questions, report bugs and request features? =
 
 You can write comments on the [support page](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/ "Marcel's weblog").
@@ -64,7 +69,7 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 == Changelog ==
 
 = Next release =
-* Improvement: print failure reason
+* Improvement: better error messages
 * Improvement: more debug info
 * Improvement: support for [internationalized domain names](http://en.wikipedia.org/wiki/Internationalized_domain_name "IDN")
 * Added Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
