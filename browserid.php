@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: BrowserID
-Plugin URI: http://wordpress.org/extend/plugins/browserid/
+Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
 Version: 0.2
 Author: Marcel Bokhorst

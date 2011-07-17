@@ -18,8 +18,8 @@ This plugin adds a BrowserID login button to your login page. There is also a wi
 
 **BrowserID and this plugin are experimental !**
 
-Please report any issue you have with this plugin on the [forum page](http://wordpress.org/tags/browserid?forum_id=10 "Forum"), so I can at least try to fix it.
-If you rate this plugin low, please [let me know why](http://blog.bokhorst.biz/contact/ "Marcel's weblog").
+Please report any issue you have with this plugin on the [support page](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/ "Marcel's weblog"), so I can at least try to fix it.
+If you rate this plugin low, please [let me know why](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/#respond "Marcel's weblog").
 
 See my [other plugins](http://wordpress.org/extend/plugins/profile/m66b "Marcel Bokhorst").
 
@@ -53,7 +53,7 @@ Your hosting provider should take a look at the SSL certificates.
 
 = Where can I ask questions, report bugs and request features? =
 
-You can ask for support on the [forum page](http://wordpress.org/tags/browserid?forum_id=10 "Forum").
+You can write comments on the [support page](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/ "Marcel's weblog").
 
 == Screenshots ==
 
