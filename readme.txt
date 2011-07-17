@@ -66,6 +66,8 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 = Next release =
 * Improvement: print failure reason
 * Improvement: more debug info
+* Improvement: support for [internationalized domain names](http://en.wikipedia.org/wiki/Internationalized_domain_name "IDN")
+* Added Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
 * Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
 
 = 0.2 =
@@ -92,3 +94,4 @@ First public release
 This plugin uses:
 
 * The client side [BrowserID script](https://browserid.org/include.js "BrowserID script")
+* [IDNA Convert](http://idnaconv.phlymail.de "IDNA Convert")

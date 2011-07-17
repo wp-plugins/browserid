@@ -36,6 +36,8 @@ if (version_compare(PHP_VERSION, '5.0.0', '<'))
 define('c_bid_text_domain', 'browserid');
 define('c_bid_option_version', 'bid_version');
 
+require_once('idna_convert.class.php');
+
 // Define class
 if (!class_exists('M66BrowserID')) {
 	class M66BrowserID {
@@ -95,7 +97,10 @@ if (!class_exists('M66BrowserID')) {
 			// BrowserID assertion
 			if (isset($_REQUEST['browserid_assertion'])) {
 				// Build URL
-				$url = 'https://browserid.org/verify?assertion=' . $_REQUEST['browserid_assertion'] . '&audience=' . $_SERVER['HTTP_HOST']; //urlencode(get_home_url());
+				$assertion = $_REQUEST['browserid_assertion'];
+				$IDN = new idna_convert();
+				$audience = $IDN->decode($_SERVER['HTTP_HOST']);
+				$url = 'https://browserid.org/verify?assertion=' . $assertion . '&audience=' . $audience;
 
 				// Verify
 				$response = wp_remote_get($url);
@@ -254,8 +259,21 @@ if (!class_exists('M66BrowserID')) {
 			</form>
 			</div>
 <?php
-			if ($this->debug)
+			if ($this->debug) {
+				echo '<p>idn_to_utf8: ' . (function_exists('idn_to_utf8') ? 'Yes' : 'No') . '</p>';
+
+				$IDN = new idna_convert();
+				$input = 'www.xn--idyry-yua.no';
+				$output = $IDN->decode($input);
+				echo '<p>' . $input . ' -> ' . $output . '</p>';
+
+				$IDN = new idna_convert();
+				$input = 'blog.bokhorst.biz';
+				$output = $IDN->decode($input);
+				echo '<p>' . $input . ' -> ' . $output . '</p>';
+
 				echo '<br /><pre>' . print_r($_SERVER, true) . '</pre>';
+			}
 		}
 
 		// SPSN script
