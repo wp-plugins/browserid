@@ -63,6 +63,9 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 
 == Changelog ==
 
+= Next release =
+* Improvement: more debug info
+
 = 0.2 =
 * Bugfix: custom HTML for login page
 * Added Flemish translation

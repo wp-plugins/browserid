@@ -130,8 +130,10 @@ if (!class_exists('M66BrowserID')) {
 						// Failed
 						header('Content-type: text/plain');
 						echo __('Verification failed', c_bid_text_domain) . PHP_EOL;
-						if ($this->debug)
+						if ($this->debug) {
+							echo 'host=' . $_SERVER['HTTP_HOST'] . PHP_EOL;
 							print_r($result);
+						}
 					}
 				}
 				exit();
