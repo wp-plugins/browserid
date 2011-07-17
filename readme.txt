@@ -1,5 +1,5 @@
 === BrowserID ===
-Contributors: Marcel Bokhorst
+Contributors: Marcel Bokhorst, M66B
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB7DGNA3MJ&lc=US&item_name=BrowserID%20WordPress%20plugin&item_number=Marcel%20Bokhorst&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
 Tags: security, admin, authentication, access, widget, login
 Requires at least: 3.2
@@ -59,6 +59,7 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 
 1. BrowserID logo
 1. BrowserID login button
+1. WordPress login dialog
 
 == Changelog ==
 
