@@ -21,7 +21,7 @@ This plugin adds a BrowserID login button to your login page. There is also a wi
 Please report any issue you have with this plugin on the [support page](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/ "Marcel's weblog"), so I can at least try to fix it.
 If you rate this plugin low, please [let me know why](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/#respond "Marcel's weblog").
 
-See my [other plugins](http://wordpress.org/extend/plugins/profile/m66b "Marcel Bokhorst")
+See my [other plugins](http://wordpress.org/extend/plugins/profile/m66b "Marcel Bokhorst").
 
 == Installation ==
 
@@ -62,6 +62,9 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 1. WordPress login dialog
 
 == Changelog ==
+
+= Next release =
+* Improvement: more debug info.
 
 = 0.2 =
 * Bugfix: custom HTML for login page
