@@ -117,7 +117,7 @@ if (!class_exists('M66BrowserID')) {
 						// No result or status
 						header('Content-type: text/plain');
 						echo __('Verification void', c_bid_text_domain) . PHP_EOL;
-						echo $result->response->message . PHP_EOL;
+						echo $response['response']['message'] . PHP_EOL;
 						if ($this->debug)
 							print_r($response);
 					}
