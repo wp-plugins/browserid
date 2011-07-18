@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.2
+Version: 0.3
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -121,7 +121,7 @@ if (!class_exists('M66BrowserID')) {
 						if ($this->debug)
 							print_r($response);
 					}
-					else if ($result->status == 'okay' && $result->audience == $_SERVER['HTTP_HOST']) {
+					else if ($result->status == 'okay' && $result->audience == $audience) {
 						// Succeeded
 						$user = self::Login_by_email($result->email);
 						if ($user)
@@ -130,6 +130,8 @@ if (!class_exists('M66BrowserID')) {
 							// User not found?
 							header('Content-type: text/plain');
 							echo __('Login failed', c_bid_text_domain) . ' (' . $result->email . ')' . PHP_EOL;
+							if ($this->debug)
+								print_r($result);
 						}
 					}
 					else {
@@ -138,7 +140,7 @@ if (!class_exists('M66BrowserID')) {
 						echo __('Verification failed', c_bid_text_domain) . PHP_EOL;
 						echo $result->reason . PHP_EOL;
 						if ($this->debug) {
-							echo 'host=' . $_SERVER['HTTP_HOST'] . PHP_EOL;
+							echo 'audience=' . $audience . PHP_EOL;
 							print_r($result);
 						}
 					}

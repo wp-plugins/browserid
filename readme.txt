@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB
 Tags: security, admin, authentication, access, widget, login
 Requires at least: 3.2
 Tested up to: 3.2.1
-Stable tag: 0.2
+Stable tag: 0.3
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -56,6 +56,21 @@ Your hosting provider should take a look at the SSL certificates.
 The browserid.org service is still in testing phase.
 Trying again may help.
 
+= I get 'Login failed' =
+
+Only users that registered before can login.
+The e-mail address used for BrowserID should match the e-mail address registered with.
+
+= I get 'Verification failed' =
+
+Are you cheating?
+If there isn't an error message, turn on debug mode to see the complete response.
+
+= I get 'Verification void' =
+
+Something went terribly wrong.
+If there isn't an error message, turn on debug mode to see the complete response.
+
 = Where can I ask questions, report bugs and request features? =
 
 You can write comments on the [support page](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/ "Marcel's weblog").
@@ -69,11 +84,14 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 == Changelog ==
 
 = Next release =
+* Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
+
+= 0.3 =
 * Improvement: better error messages
 * Improvement: more debug info
 * Improvement: support for [internationalized domain names](http://en.wikipedia.org/wiki/Internationalized_domain_name "IDN")
-* Added Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
-* Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
+* Updated FAQ
+* Added Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen"), thanks!
 
 = 0.2 =
 * Bugfix: custom HTML for login page
@@ -87,6 +105,9 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 * Development version
 
 == Upgrade Notice ==
+
+= 0.3 =
+Three improvements
 
 = 0.2 =
 One bugfix
