@@ -263,17 +263,15 @@ if (!class_exists('M66BrowserID')) {
 			</div>
 <?php
 			if ($this->debug) {
-				echo '<p>idn_to_utf8: ' . (function_exists('idn_to_utf8') ? 'Yes' : 'No') . '</p>';
-
 				$IDN = new idna_convert();
-				$input = 'www.xn--idyry-yua.no';
-				$output = $IDN->decode($input);
-				echo '<p>' . $input . ' -> ' . $output . '</p>';
+				$audience = $IDN->decode($_SERVER['HTTP_HOST']);
 
-				$IDN = new idna_convert();
-				$input = 'blog.bokhorst.biz';
-				$output = $IDN->decode($input);
-				echo '<p>' . $input . ' -> ' . $output . '</p>';
+				echo '<p><strong>idn_to_utf8</strong>: ' . (function_exists('idn_to_utf8') ? 'yes' : 'no') . '</p>';
+				echo '<p><strong>PHP audience</strong>: ' . $_SERVER['HTTP_HOST'] . '</p>';
+				echo '<p><strong>PHP audience UTF-8</strong>: ' . $audience . '</p>';
+				echo '<script type="text/javascript">';
+				echo 'document.write("<p><strong>JS audience</strong>: " + window.location.hostname + "</p>");';
+				echo '</script>';
 
 				echo '<br /><pre>' . print_r($_SERVER, true) . '</pre>';
 			}

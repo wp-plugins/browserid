@@ -92,6 +92,7 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 == Changelog ==
 
 = Next release =
+* Improvement: more debug info
 * Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
 
 = 0.4 =
