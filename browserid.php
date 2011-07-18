@@ -35,6 +35,7 @@ if (version_compare(PHP_VERSION, '5.0.0', '<'))
 // Define constants
 define('c_bid_text_domain', 'browserid');
 define('c_bid_option_version', 'bid_version');
+define('c_bid_option_response', 'bid_response');
 
 require_once('idna_convert/idna_convert.class.php');
 
@@ -104,6 +105,7 @@ if (!class_exists('M66BrowserID')) {
 
 				// Verify
 				$response = wp_remote_get($url);
+				update_option(c_bid_option_response, $response);
 
 				// Check result
 				if (is_wp_error($response)) {
@@ -273,6 +275,7 @@ if (!class_exists('M66BrowserID')) {
 				echo 'document.write("<p><strong>JS audience</strong>: " + window.location.hostname + "</p>");';
 				echo '</script>';
 
+				echo '<br /><pre>' . print_r(get_option(c_bid_option_response), true) . '</pre>';
 				echo '<br /><pre>' . print_r($_SERVER, true) . '</pre>';
 			}
 		}
