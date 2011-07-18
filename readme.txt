@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB
 Tags: security, admin, authentication, access, widget, login
 Requires at least: 3.2
 Tested up to: 3.2.1
-Stable tag: 0.3
+Stable tag: 0.4
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -42,6 +42,14 @@ See my [other plugins](http://wordpress.org/extend/plugins/profile/m66b "Marcel 
 1. Activate the plugin through the Plugins menu in WordPress
 
 == Frequently Asked Questions ==
+
+= What is 'Custom login HTML for?' =
+
+Try putting the following into this option:
+
+`<img src="https://browserid.org/i/browserid_logo_sm.png" />`
+
+Now you will see the BrowserID logo instead of the login button.
 
 = Which server does verify the assertion? =
 
@@ -86,6 +94,10 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 = Next release =
 * Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
 
+= 0.4 =
+* Bug fix: using site URL in stead of home URL
+* Updated FAQ
+
 = 0.3 =
 * Improvement: better error messages
 * Improvement: more debug info
@@ -105,6 +117,9 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 * Development version
 
 == Upgrade Notice ==
+
+= 0.4 =
+Bugfix
 
 = 0.3 =
 Three improvements
