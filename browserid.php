@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.6
+Version: 0.7
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -103,15 +103,21 @@ if (!class_exists('M66BrowserID')) {
 				$audience = $IDN->decode($_SERVER['HTTP_HOST']);
 				$url = 'https://browserid.org/verify?assertion=' . $assertion . '&audience=' . $audience;
 
-				// Verify
+				// No SSL verify?
 				$options = get_option('browserid_options');
 				if (isset($options['browserid_noverify']) && $options['browserid_noverify'])
 					$args = array('sslverify' => false);
 				else
 					$args = array();
 
-				// Verify
+				// Verify assertion
 				$response = wp_remote_get($url, $args);
+
+				// Get remember me flag
+				$rememberme = (isset($_REQUEST['rememberme']) && $_REQUEST['rememberme'] == 'true');
+
+				// Persist response
+				$response['rememberme'] = $rememberme;
 				update_option(c_bid_option_response, $response);
 
 				// Check result
@@ -135,7 +141,7 @@ if (!class_exists('M66BrowserID')) {
 					}
 					else if ($result->status == 'okay' && $result->audience == $audience) {
 						// Succeeded
-						$user = self::Login_by_email($result->email);
+						$user = self::Login_by_email($result->email, $rememberme);
 						if ($user)
 							wp_redirect(admin_url());
 						else {
@@ -165,11 +171,11 @@ if (!class_exists('M66BrowserID')) {
 		}
 
 		// Log WordPress user in using e-mail address
-		function Login_by_email($email) {
+		function Login_by_email($email, $rememberme) {
 			$user = get_user_by_email($email);
 			if ($user) {
 				wp_set_current_user($user->ID, $user->user_login);
-				wp_set_auth_cookie($user->ID);
+				wp_set_auth_cookie($user->ID, $rememberme);
 				do_action('wp_login', $user->user_login);
 			}
 			return $user;
@@ -181,8 +187,12 @@ if (!class_exists('M66BrowserID')) {
 			<script type="text/javascript">
 				function browserid_login() {
 					navigator.id.getVerifiedEmail(function(assertion) {
-						if (assertion)
-							window.location='<?php echo get_site_url(); ?>?browserid_assertion=' + assertion;
+						if (assertion) {
+							rememberme = document.getElementById('rememberme');
+							if (rememberme != null)
+								rememberme = rememberme.checked;
+							window.location='<?php echo get_site_url(); ?>?browserid_assertion=' + assertion + '&rememberme=' + rememberme;
+						}
 						else
 							alert("<?php _e('Verification failed', c_bid_text_domain); ?>");
 					});

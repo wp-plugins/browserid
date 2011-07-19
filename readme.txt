@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB
 Tags: security, admin, authentication, access, widget, login
 Requires at least: 3.1
 Tested up to: 3.2.1
-Stable tag: 0.6
+Stable tag: 0.7
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -95,6 +95,10 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 = Next release =
 * Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
 
+= 0.7 =
+* New feature: support for *Remember Me* check box
+* Updated Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
+
 = 0.6 =
 * New feature: option *Do not verify SSL certificate*
 * Updated Dutch and Flemish translations
@@ -126,6 +130,9 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 * Development version
 
 == Upgrade Notice ==
+
+= 0.7 =
+One new feature
 
 = 0.6 =
 One new feature
