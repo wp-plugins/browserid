@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.3
+Version: 0.5
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -35,6 +35,7 @@ if (version_compare(PHP_VERSION, '5.0.0', '<'))
 // Define constants
 define('c_bid_text_domain', 'browserid');
 define('c_bid_option_version', 'bid_version');
+define('c_bid_option_response', 'bid_response');
 
 require_once('idna_convert/idna_convert.class.php');
 
@@ -104,11 +105,15 @@ if (!class_exists('M66BrowserID')) {
 
 				// Verify
 				$response = wp_remote_get($url);
+				update_option(c_bid_option_response, $response);
 
 				// Check result
 				if (is_wp_error($response)) {
 					header('Content-type: text/plain');
-					echo __($response->get_error_message()) . PHP_EOL;
+					if ($this->debug)
+						print_r($response);
+					else
+						echo __($response->get_error_message()) . PHP_EOL;
 				}
 				else {
 					// Decode result
@@ -117,7 +122,7 @@ if (!class_exists('M66BrowserID')) {
 						// No result or status
 						header('Content-type: text/plain');
 						echo __('Verification void', c_bid_text_domain) . PHP_EOL;
-						echo $result->response->message . PHP_EOL;
+						echo $response['response']['message'] . PHP_EOL;
 						if ($this->debug)
 							print_r($response);
 					}
@@ -170,7 +175,7 @@ if (!class_exists('M66BrowserID')) {
 				function browserid_login() {
 					navigator.id.getVerifiedEmail(function(assertion) {
 						if (assertion)
-							window.location='<?php echo get_home_url(); ?>?browserid_assertion=' + assertion;
+							window.location='<?php echo get_site_url(); ?>?browserid_assertion=' + assertion;
 						else
 							alert("<?php _e('Verification failed', c_bid_text_domain); ?>");
 					});
@@ -263,18 +268,17 @@ if (!class_exists('M66BrowserID')) {
 			</div>
 <?php
 			if ($this->debug) {
-				echo '<p>idn_to_utf8: ' . (function_exists('idn_to_utf8') ? 'Yes' : 'No') . '</p>';
-
 				$IDN = new idna_convert();
-				$input = 'www.xn--idyry-yua.no';
-				$output = $IDN->decode($input);
-				echo '<p>' . $input . ' -> ' . $output . '</p>';
+				$audience = $IDN->decode($_SERVER['HTTP_HOST']);
 
-				$IDN = new idna_convert();
-				$input = 'blog.bokhorst.biz';
-				$output = $IDN->decode($input);
-				echo '<p>' . $input . ' -> ' . $output . '</p>';
+				echo '<p><strong>idn_to_utf8</strong>: ' . (function_exists('idn_to_utf8') ? 'yes' : 'no') . '</p>';
+				echo '<p><strong>PHP audience</strong>: ' . $_SERVER['HTTP_HOST'] . '</p>';
+				echo '<p><strong>PHP audience UTF-8</strong>: ' . $audience . '</p>';
+				echo '<script type="text/javascript">';
+				echo 'document.write("<p><strong>JS audience</strong>: " + window.location.hostname + "</p>");';
+				echo '</script>';
 
+				echo '<br /><pre>' . print_r(get_option(c_bid_option_response), true) . '</pre>';
 				echo '<br /><pre>' . print_r($_SERVER, true) . '</pre>';
 			}
 		}
