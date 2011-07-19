@@ -2,9 +2,9 @@
 Contributors: Marcel Bokhorst, M66B
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB7DGNA3MJ&lc=US&item_name=BrowserID%20WordPress%20plugin&item_number=Marcel%20Bokhorst&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
 Tags: security, admin, authentication, access, widget, login
-Requires at least: 3.2
+Requires at least: 3.1
 Tested up to: 3.2.1
-Stable tag: 0.4
+Stable tag: 0.5
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -92,8 +92,11 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 == Changelog ==
 
 = Next release =
-* Improvement: more debug info
 * Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
+
+= 0.5 =
+* Improvement: more debug info
+* Tested with WordPress 3.1
 
 = 0.4 =
 * Bug fix: using site URL in stead of home URL
@@ -118,6 +121,9 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 * Development version
 
 == Upgrade Notice ==
+
+= 0.5 =
+One improvement
 
 = 0.4 =
 Bugfix
