@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.3
+Version: 0.7
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -35,6 +35,7 @@ if (version_compare(PHP_VERSION, '5.0.0', '<'))
 // Define constants
 define('c_bid_text_domain', 'browserid');
 define('c_bid_option_version', 'bid_version');
+define('c_bid_option_response', 'bid_response');
 
 require_once('idna_convert/idna_convert.class.php');
 
@@ -102,13 +103,30 @@ if (!class_exists('M66BrowserID')) {
 				$audience = $IDN->decode($_SERVER['HTTP_HOST']);
 				$url = 'https://browserid.org/verify?assertion=' . $assertion . '&audience=' . $audience;
 
-				// Verify
-				$response = wp_remote_get($url);
+				// No SSL verify?
+				$options = get_option('browserid_options');
+				if (isset($options['browserid_noverify']) && $options['browserid_noverify'])
+					$args = array('sslverify' => false);
+				else
+					$args = array();
+
+				// Verify assertion
+				$response = wp_remote_get($url, $args);
+
+				// Get remember me flag
+				$rememberme = (isset($_REQUEST['rememberme']) && $_REQUEST['rememberme'] == 'true');
+
+				// Persist response
+				$response['rememberme'] = $rememberme;
+				update_option(c_bid_option_response, $response);
 
 				// Check result
 				if (is_wp_error($response)) {
 					header('Content-type: text/plain');
-					echo __($response->get_error_message()) . PHP_EOL;
+					if ($this->debug)
+						print_r($response);
+					else
+						echo __($response->get_error_message()) . PHP_EOL;
 				}
 				else {
 					// Decode result
@@ -117,13 +135,13 @@ if (!class_exists('M66BrowserID')) {
 						// No result or status
 						header('Content-type: text/plain');
 						echo __('Verification void', c_bid_text_domain) . PHP_EOL;
-						echo $result->response->message . PHP_EOL;
+						echo $response['response']['message'] . PHP_EOL;
 						if ($this->debug)
 							print_r($response);
 					}
 					else if ($result->status == 'okay' && $result->audience == $audience) {
 						// Succeeded
-						$user = self::Login_by_email($result->email);
+						$user = self::Login_by_email($result->email, $rememberme);
 						if ($user)
 							wp_redirect(admin_url());
 						else {
@@ -153,11 +171,11 @@ if (!class_exists('M66BrowserID')) {
 		}
 
 		// Log WordPress user in using e-mail address
-		function Login_by_email($email) {
+		function Login_by_email($email, $rememberme) {
 			$user = get_user_by_email($email);
 			if ($user) {
 				wp_set_current_user($user->ID, $user->user_login);
-				wp_set_auth_cookie($user->ID);
+				wp_set_auth_cookie($user->ID, $rememberme);
 				do_action('wp_login', $user->user_login);
 			}
 			return $user;
@@ -169,8 +187,12 @@ if (!class_exists('M66BrowserID')) {
 			<script type="text/javascript">
 				function browserid_login() {
 					navigator.id.getVerifiedEmail(function(assertion) {
-						if (assertion)
-							window.location='<?php echo get_home_url(); ?>?browserid_assertion=' + assertion;
+						if (assertion) {
+							rememberme = document.getElementById('rememberme');
+							if (rememberme != null)
+								rememberme = rememberme.checked;
+							window.location='<?php echo get_site_url(); ?>?browserid_assertion=' + assertion + '&rememberme=' + rememberme;
+						}
 						else
 							alert("<?php _e('Verification failed', c_bid_text_domain); ?>");
 					});
@@ -207,6 +229,7 @@ if (!class_exists('M66BrowserID')) {
 			add_settings_section('plugin_main', null, array(&$this, 'Options_main'), 'browserid');
 			add_settings_field('browserid_login_html', __('Custom login HTML:', c_bid_text_domain), array(&$this, 'Option_login_html'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_logout_html', __('Custom logout HTML:', c_bid_text_domain), array(&$this, 'Option_logout_html'), 'browserid', 'plugin_main');
+			add_settings_field('browserid_noverify', __('Do not verify SSL certificate:', c_bid_text_domain), array(&$this, 'Option_noverify'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_nospsn', __('I don\'t want to support this plugin with the Sustainable Plugins Sponsorship Network:', c_bid_text_domain), array(&$this, 'Option_nospsn'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_debug', __('Debug mode:', c_bid_text_domain), array(&$this, 'Option_debug'), 'browserid', 'plugin_main');
   		}
@@ -225,6 +248,13 @@ if (!class_exists('M66BrowserID')) {
 		function Option_logout_html() {
 			$options = get_option('browserid_options');
 			echo "<input id='browserid_logout_html' name='browserid_options[browserid_logout_html]' type='text' size='80' value='{$options['browserid_logout_html']}' />";
+		}
+
+		// No SSL verify option
+		function Option_noverify() {
+			$options = get_option('browserid_options');
+			$chk = (isset($options['browserid_noverify']) && $options['browserid_noverify'] ? " checked='checked'" : '');
+			echo "<input id='browserid_noverify' name='browserid_options[browserid_noverify]' type='checkbox'" . $chk. "/>";
 		}
 
 		// SPSN option
@@ -263,18 +293,17 @@ if (!class_exists('M66BrowserID')) {
 			</div>
 <?php
 			if ($this->debug) {
-				echo '<p>idn_to_utf8: ' . (function_exists('idn_to_utf8') ? 'Yes' : 'No') . '</p>';
-
 				$IDN = new idna_convert();
-				$input = 'www.xn--idyry-yua.no';
-				$output = $IDN->decode($input);
-				echo '<p>' . $input . ' -> ' . $output . '</p>';
+				$audience = $IDN->decode($_SERVER['HTTP_HOST']);
 
-				$IDN = new idna_convert();
-				$input = 'blog.bokhorst.biz';
-				$output = $IDN->decode($input);
-				echo '<p>' . $input . ' -> ' . $output . '</p>';
+				echo '<p><strong>idn_to_utf8</strong>: ' . (function_exists('idn_to_utf8') ? 'yes' : 'no') . '</p>';
+				echo '<p><strong>PHP audience</strong>: ' . $_SERVER['HTTP_HOST'] . '</p>';
+				echo '<p><strong>PHP audience UTF-8</strong>: ' . $audience . '</p>';
+				echo '<script type="text/javascript">';
+				echo 'document.write("<p><strong>JS audience</strong>: " + window.location.hostname + "</p>");';
+				echo '</script>';
 
+				echo '<br /><pre>' . print_r(get_option(c_bid_option_response), true) . '</pre>';
 				echo '<br /><pre>' . print_r($_SERVER, true) . '</pre>';
 			}
 		}
