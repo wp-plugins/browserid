@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB
 Tags: security, admin, authentication, access, widget, login
 Requires at least: 3.1
 Tested up to: 3.2.1
-Stable tag: 0.5
+Stable tag: 0.6
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -58,6 +58,7 @@ The assertion is verified by the server at https://browserid.org/verify.
 = I get 'SSL certificate problem, verify that the CA cert is OK' =
 
 Your hosting provider should take a look at the SSL certificates.
+You can check the option *Do not verify SSL certificate*, but please realize this isn't entirely safe.
 
 = I get 'Bad Gateway' =
 
@@ -94,6 +95,10 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 = Next release =
 * Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
 
+= 0.6 =
+* New feature: option *Do not verify SSL certificate*
+* Updated Dutch and Flemish translations
+
 = 0.5 =
 * Improvement: more debug info
 * Tested with WordPress 3.1
@@ -121,6 +126,9 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 * Development version
 
 == Upgrade Notice ==
+
+= 0.6 =
+One new feature
 
 = 0.5 =
 One improvement

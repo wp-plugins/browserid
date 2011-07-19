@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.5
+Version: 0.6
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -104,7 +104,14 @@ if (!class_exists('M66BrowserID')) {
 				$url = 'https://browserid.org/verify?assertion=' . $assertion . '&audience=' . $audience;
 
 				// Verify
-				$response = wp_remote_get($url);
+				$options = get_option('browserid_options');
+				if (isset($options['browserid_noverify']) && $options['browserid_noverify'])
+					$args = array('sslverify' => false);
+				else
+					$args = array();
+
+				// Verify
+				$response = wp_remote_get($url, $args);
 				update_option(c_bid_option_response, $response);
 
 				// Check result
@@ -212,6 +219,7 @@ if (!class_exists('M66BrowserID')) {
 			add_settings_section('plugin_main', null, array(&$this, 'Options_main'), 'browserid');
 			add_settings_field('browserid_login_html', __('Custom login HTML:', c_bid_text_domain), array(&$this, 'Option_login_html'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_logout_html', __('Custom logout HTML:', c_bid_text_domain), array(&$this, 'Option_logout_html'), 'browserid', 'plugin_main');
+			add_settings_field('browserid_noverify', __('Do not verify SSL certificate:', c_bid_text_domain), array(&$this, 'Option_noverify'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_nospsn', __('I don\'t want to support this plugin with the Sustainable Plugins Sponsorship Network:', c_bid_text_domain), array(&$this, 'Option_nospsn'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_debug', __('Debug mode:', c_bid_text_domain), array(&$this, 'Option_debug'), 'browserid', 'plugin_main');
   		}
@@ -230,6 +238,13 @@ if (!class_exists('M66BrowserID')) {
 		function Option_logout_html() {
 			$options = get_option('browserid_options');
 			echo "<input id='browserid_logout_html' name='browserid_options[browserid_logout_html]' type='text' size='80' value='{$options['browserid_logout_html']}' />";
+		}
+
+		// No SSL verify option
+		function Option_noverify() {
+			$options = get_option('browserid_options');
+			$chk = (isset($options['browserid_noverify']) && $options['browserid_noverify'] ? " checked='checked'" : '');
+			echo "<input id='browserid_noverify' name='browserid_options[browserid_noverify]' type='checkbox'" . $chk. "/>";
 		}
 
 		// SPSN option
