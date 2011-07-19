@@ -28,6 +28,10 @@ Author URI: http://blog.bokhorst.biz/about/
 
 #error_reporting(E_ALL);
 
+// To do:
+// - Shortcode
+// - Config server
+
 // Check PHP version
 if (version_compare(PHP_VERSION, '5.0.0', '<'))
 	die('BrowserID requires at least PHP 5, installed version is ' . PHP_VERSION);
@@ -255,6 +259,7 @@ if (!class_exists('M66BrowserID')) {
 			$options = get_option('browserid_options');
 			$chk = (isset($options['browserid_noverify']) && $options['browserid_noverify'] ? " checked='checked'" : '');
 			echo "<input id='browserid_noverify' name='browserid_options[browserid_noverify]' type='checkbox'" . $chk. "/>";
+			echo __('Security risk!', c_bid_text_domain);
 		}
 
 		// SPSN option
@@ -269,6 +274,7 @@ if (!class_exists('M66BrowserID')) {
 			$options = get_option('browserid_options');
 			$chk = (isset($options['browserid_debug']) && $options['browserid_debug'] ? " checked='checked'" : '');
 			echo "<input id='browserid_debug' name='browserid_options[browserid_debug]' type='checkbox'" . $chk. "/>";
+			echo __('Security risk!', c_bid_text_domain);
 		}
 
 		// Render options page
