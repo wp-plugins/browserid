@@ -110,7 +110,10 @@ if (!class_exists('M66BrowserID')) {
 				// Check result
 				if (is_wp_error($response)) {
 					header('Content-type: text/plain');
-					echo __($response->get_error_message()) . PHP_EOL;
+					if ($this->debug)
+						print_r($response);
+					else
+						echo __($response->get_error_message()) . PHP_EOL;
 				}
 				else {
 					// Decode result
