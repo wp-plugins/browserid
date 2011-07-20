@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.8
+Version: 0.9
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -72,15 +72,21 @@ if (!class_exists('M66BrowserID')) {
 				add_action('admin_menu', array(&$this, 'Admin_menu'));
 				add_action('admin_init', array(&$this, 'Admin_init'));
 			}
+
+			// Shortcode
+			add_shortcode('browserid_loginout', array(&$this, 'Shortcode_loginout'));
 		}
 
 		// Handle plugin activation
 		function Activate() {
 			global $wpdb;
 			$version = get_option(c_bid_option_version);
-			if ($version < 1) {
+			if ($version < 2) {
+				$options = get_option('browserid_options');
+				$options['browserid_logout_html'] = __('Logout', c_bid_text_domain);
+				update_option('browserid_options', $options);
 			}
-			update_option(c_bid_option_version, 1);
+			update_option(c_bid_option_version, 2);
 		}
 
 		// Handle plugin deactivation
@@ -100,7 +106,7 @@ if (!class_exists('M66BrowserID')) {
 				// Get assertion
 				$assertion = $_REQUEST['browserid_assertion'];
 
-				// Get assertion & decode IDN
+				// Get audience & decode IDN
 				if (function_exists('idn_to_utf8'))
 					$audience = idn_to_utf8($_SERVER['HTTP_HOST']);
 				else {
@@ -132,6 +138,7 @@ if (!class_exists('M66BrowserID')) {
 
 				// Persist debug info
 				$response['vserver'] = $vserver;
+				$response['audience'] = $audience;
 				$response['rememberme'] = $rememberme;
 				update_option(c_bid_option_response, $response);
 
@@ -237,12 +244,39 @@ if (!class_exists('M66BrowserID')) {
 
 		// Add login button to login form
 		function Login_form() {
+			echo '<p>' . self::Get_loginout_html() . '<br /><br /></p>';
+		}
+
+		// Shortcode "browserid_loginout"
+		function Shortcode_loginout() {
+			return self::Get_loginout_html();
+		}
+
+		function Get_loginout_html() {
+			// Get options
 			$options = get_option('browserid_options');
-			if (empty($options['browserid_login_html']))
-				$html = '<img src="https://browserid.org/i/sign_in_blue.png" style="border: 0;" />';
-			else
-				$html = $options['browserid_login_html'];
-			echo '<p><a href="#" onclick="return browserid_login();">' . $html . '</a><br /><br /></p>';
+
+			if (is_user_logged_in()) {
+				// User logged in
+				if (empty($options['browserid_logout_html']))
+					$html = '';
+				else
+					$html = $options['browserid_logout_html'];
+				// Simple link
+				if (empty($html))
+					return '';
+				else
+					return '<a href="' . wp_logout_url() . '">' . $html . '</a>';
+			}
+			else {
+				// User not logged in
+				if (empty($options['browserid_login_html']))
+					$html = '<img src="https://browserid.org/i/sign_in_blue.png" style="border: 0;" />';
+				else
+					$html = $options['browserid_login_html'];
+				// Button
+				return '<a href="#" onclick="return browserid_login();">' . $html . '</a>';
+			}
 		}
 
 		// Register options page
@@ -262,7 +296,7 @@ if (!class_exists('M66BrowserID')) {
 			add_settings_section('plugin_main', null, array(&$this, 'Options_main'), 'browserid');
 			add_settings_field('browserid_login_html', __('Custom login HTML:', c_bid_text_domain), array(&$this, 'Option_login_html'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_logout_html', __('Custom logout HTML:', c_bid_text_domain), array(&$this, 'Option_logout_html'), 'browserid', 'plugin_main');
-			add_settings_field('browserid_vserver', __('Verfication server:', c_bid_text_domain), array(&$this, 'Option_vserver'), 'browserid', 'plugin_main');
+			add_settings_field('browserid_vserver', __('Verification server:', c_bid_text_domain), array(&$this, 'Option_vserver'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_novalid', __('Do not check valid until time:', c_bid_text_domain), array(&$this, 'Option_novalid'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_noverify', __('Do not verify SSL certificate:', c_bid_text_domain), array(&$this, 'Option_noverify'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_nospsn', __('I don\'t want to support this plugin with the Sustainable Plugins Sponsorship Network:', c_bid_text_domain), array(&$this, 'Option_nospsn'), 'browserid', 'plugin_main');
@@ -354,6 +388,7 @@ if (!class_exists('M66BrowserID')) {
 					$audience = $IDN->decode($_SERVER['HTTP_HOST']);
 				}
 
+				$options = get_option('browserid_options');
 				$response = get_option(c_bid_option_response);
 				$result = json_decode($response['body'], true);
 
@@ -366,8 +401,9 @@ if (!class_exists('M66BrowserID')) {
 				echo 'document.write("<p><strong>JS audience</strong>: " + window.location.hostname + "</p>");';
 				echo '</script>';
 
-				echo '<br /><pre>' . htmlentities(print_r($response, true)) . '</pre>';
-				echo '<br /><pre>' . htmlentities(print_r($_SERVER, true)) . '</pre>';
+				echo '<br /><pre>Options=' . htmlentities(print_r($options, true)) . '</pre>';
+				echo '<br /><pre>Response=' . htmlentities(print_r($response, true)) . '</pre>';
+				echo '<br /><pre>Server=' . htmlentities(print_r($_SERVER, true)) . '</pre>';
 			}
 		}
 
@@ -422,27 +458,7 @@ class BrowserID_Widget extends WP_Widget {
 
 	// Widget contents
 	function widget($args, $instance) {
-		// Get options
-		$options = get_option('browserid_options');
-
-		if (is_user_logged_in()) {
-			// User logged in
-			if (empty($options['browserid_logout_html']))
-				$html = 'Logout';
-			else
-				$html = $options['browserid_logout_html'];
-			// Simple link
-			echo '<a href="' . wp_logout_url() . '">' . $html . '</a>';
-		}
-		else {
-			// User not logged in
-			if (empty($options['browserid_login_html']))
-				$html = '<img src="https://browserid.org/i/sign_in_blue.png" style="border: 0;" />';
-			else
-				$html = $options['browserid_login_html'];
-			// Button
-			echo '<a href="#" onclick="return browserid_login();">' . $html . '</a>';
-		}
+		echo M66BrowserID::Get_loginout_html();
 	}
 
 	// Update settings
@@ -473,6 +489,13 @@ global $m66browserid;
 if (empty($m66browserid)) {
 	$m66browserid = new M66BrowserID();
 	register_activation_hook(__FILE__, array(&$m66browserid, 'Activate'));
+}
+
+// Template tag "browserid_loginout"
+if (!function_exists('browserid_loginout')) {
+	function browserid_loginout() {
+		echo M66BrowserID::Get_loginout_html();
+	}
 }
 
 ?>

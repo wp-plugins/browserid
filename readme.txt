@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB
 Tags: security, admin, authentication, access, widget, login
 Requires at least: 3.1
 Tested up to: 3.2.1
-Stable tag: 0.8
+Stable tag: 0.9
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -100,10 +100,16 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 = Next release =
 * Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
 
+= 0.9 =
+* New feature: shortcode for login/out button/link: *[browserid_loginout]*
+* New feature: template tag for login/out button/link: *browserid_loginout*
+* Updated Dutch and Flemish translations
+* Updated Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
+
 = 0.8 =
 * New feature: option to set verification server
 * Improvement: checking assertion valid until time (can be switch off with an option)
-* Improvement: using *idn_to_utf8* when available
+* Improvement: using [idn_to_utf8](http://php.net/manual/en/function.idn-to-utf8.php "idn_to_utf8") when available
 * Updated FAQ
 * Updated Dutch and Flemish translations
 
@@ -142,6 +148,9 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 * Development version
 
 == Upgrade Notice ==
+
+= 0.9 =
+Two new features, translation update
 
 = 0.8 =
 One new feature, two improvements
