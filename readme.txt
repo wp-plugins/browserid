@@ -98,6 +98,7 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 == Changelog ==
 
 = Next release =
+* Improvement: check issuer
 * Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
 
 = 0.11 =
@@ -186,4 +187,4 @@ First public release
 
 This plugin uses:
 
-* The client side [BrowserID script](https://browserid.org/include.js "BrowserID script").
+* The client side [BrowserID script](https://browserid.org/include.js "BrowserID script")

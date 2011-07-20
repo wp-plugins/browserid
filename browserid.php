@@ -98,7 +98,7 @@ if (!class_exists('M66BrowserID')) {
 			// I18n
 			load_plugin_textdomain(c_bid_text_domain, false, dirname(plugin_basename(__FILE__)));
 
-			// Verify BrowserID assertion received
+			// Verify received assertion
 			if (isset($_REQUEST['browserid_assertion'])) {
 				// Get options
 				$options = get_option('browserid_options');
@@ -143,8 +143,10 @@ if (!class_exists('M66BrowserID')) {
 						echo __($response->get_error_message()) . PHP_EOL;
 				}
 				else {
-					// Decode result
+					// Decode response
 					$result = json_decode($response['body'], true);
+
+					// Check result
 					if (empty($result) || empty($result['status'])) {
 						// No result or status
 						header('Content-type: text/plain');
@@ -153,7 +155,8 @@ if (!class_exists('M66BrowserID')) {
 						if ($this->debug)
 							print_r($response);
 					}
-					else if ($result['status'] == 'okay' && $result['audience'] == $audience) {
+					else if ($result['status'] == 'okay' && $result['audience'] == $audience &&
+						parse_url($result['issuer'], PHP_URL_HOST) == parse_url($vserver, PHP_URL_HOST)) {
 						// Check valid until time
 						$novalid = (isset($options['browserid_novalid']) && $options['browserid_novalid']);
 						if ($novalid || time() < $result['valid-until'] / 1000)
@@ -189,6 +192,7 @@ if (!class_exists('M66BrowserID')) {
 							echo $result['reason'] . PHP_EOL;
 						if ($this->debug) {
 							echo 'audience=' . $audience . PHP_EOL;
+							echo 'vserver=' . $vserver . PHP_EOL;
 							print_r($result);
 						}
 					}
@@ -200,7 +204,7 @@ if (!class_exists('M66BrowserID')) {
 			wp_enqueue_script('browserid', 'https://browserid.org/include.js');
 		}
 
-		// Log WordPress user in using e-mail
+		// Login user using e-mail only
 		function Login_by_email($email, $rememberme) {
 			$user = get_user_by_email($email);
 			if ($user) {
@@ -244,6 +248,7 @@ if (!class_exists('M66BrowserID')) {
 			return self::Get_loginout_html();
 		}
 
+		// Build HTML for login/out button/link
 		function Get_loginout_html() {
 			// Get options
 			$options = get_option('browserid_options');
@@ -389,7 +394,7 @@ if (!class_exists('M66BrowserID')) {
 			}
 		}
 
-		// SPSN script
+		// Render Sustainable Plugins Sponsorship Network
 		function Render_SPSN() {
 			$options = get_option('browserid_options');
 			if (!(isset($options['browserid_nospsn']) && $options['browserid_nospsn'])) {
@@ -408,13 +413,14 @@ if (!class_exists('M66BrowserID')) {
 		function Check_prerequisites() {
 			// Check WordPress version
 			global $wp_version;
-			if (version_compare($wp_version, '3.0') < 0)
-				die('BrowserID requires at least WordPress 3.0');
+			if (version_compare($wp_version, '3.1') < 0)
+				die('BrowserID requires at least WordPress 3.1');
 
 			// Check basic prerequisities
 			self::Check_function('add_action');
 			self::Check_function('wp_enqueue_script');
 			self::Check_function('json_decode');
+			self::Check_function('parse_url');
 		}
 
 		function Check_function($name) {
