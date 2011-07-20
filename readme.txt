@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB
 Tags: security, admin, authentication, access, widget, login
 Requires at least: 3.1
 Tested up to: 3.2.1
-Stable tag: 0.7
+Stable tag: 0.8
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -80,6 +80,11 @@ If there isn't an error message, turn on debug mode to see the complete response
 Something went terribly wrong.
 If there isn't an error message, turn on debug mode to see the complete response.
 
+= I get 'Verification invalid' =
+
+Maybe the time of your hosting server is incorrect.
+You could check the option *Do not check valid until time* to solve this.
+
 = Where can I ask questions, report bugs and request features? =
 
 You can write comments on the [support page](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/ "Marcel's weblog").
@@ -94,6 +99,13 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 
 = Next release =
 * Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
+
+= 0.8 =
+* New feature: option to set verification server
+* Improvement: checking assertion valid until time (can be switch off with an option)
+* Improvement: using *idn_to_utf8* when available
+* Updated FAQ
+* Updated Dutch and Flemish translations
 
 = 0.7 =
 * New feature: support for *Remember Me* check box
@@ -130,6 +142,9 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 * Development version
 
 == Upgrade Notice ==
+
+= 0.8 =
+One new feature, two improvements
 
 = 0.7 =
 One new feature
