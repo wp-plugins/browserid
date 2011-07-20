@@ -187,4 +187,3 @@ First public release
 This plugin uses:
 
 * The client side [BrowserID script](https://browserid.org/include.js "BrowserID script")
-* [phlyLabs' pure PHP IDNA Converter](http://idnaconv.phlymail.de "IDNA Convert")
