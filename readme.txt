@@ -186,4 +186,4 @@ First public release
 
 This plugin uses:
 
-* The client side [BrowserID script](https://browserid.org/include.js "BrowserID script")
+* The client side [BrowserID script](https://browserid.org/include.js "BrowserID script").
