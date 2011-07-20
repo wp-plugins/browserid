@@ -2,9 +2,9 @@
 Contributors: Marcel Bokhorst, M66B
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB7DGNA3MJ&lc=US&item_name=BrowserID%20WordPress%20plugin&item_number=Marcel%20Bokhorst&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
 Tags: security, admin, authentication, access, widget, login
-Requires at least: 3.2
+Requires at least: 3.1
 Tested up to: 3.2.1
-Stable tag: 0.3
+Stable tag: 0.9
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -43,6 +43,14 @@ See my [other plugins](http://wordpress.org/extend/plugins/profile/m66b "Marcel 
 
 == Frequently Asked Questions ==
 
+= What is 'Custom login HTML for?' =
+
+Try putting the following into this option:
+
+`<img src="https://browserid.org/i/browserid_logo_sm.png" />`
+
+Now you will see the BrowserID logo instead of the login button.
+
 = Which server does verify the assertion? =
 
 The assertion is verified by the server at https://browserid.org/verify.
@@ -50,6 +58,7 @@ The assertion is verified by the server at https://browserid.org/verify.
 = I get 'SSL certificate problem, verify that the CA cert is OK' =
 
 Your hosting provider should take a look at the SSL certificates.
+You can check the option *Do not verify SSL certificate*, but please realize this isn't entirely safe.
 
 = I get 'Bad Gateway' =
 
@@ -71,6 +80,11 @@ If there isn't an error message, turn on debug mode to see the complete response
 Something went terribly wrong.
 If there isn't an error message, turn on debug mode to see the complete response.
 
+= I get 'Verification invalid' =
+
+Maybe the time of your hosting server is incorrect.
+You could check the option *Do not check valid until time* to solve this.
+
 = Where can I ask questions, report bugs and request features? =
 
 You can write comments on the [support page](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/ "Marcel's weblog").
@@ -85,6 +99,35 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 
 = Next release =
 * Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
+
+= 0.9 =
+* New feature: shortcode for login/out button/link: *[browserid_loginout]*
+* New feature: template tag for login/out button/link: *browserid_loginout*
+* Updated Dutch and Flemish translations
+* Updated Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
+
+= 0.8 =
+* New feature: option to set verification server
+* Improvement: checking assertion valid until time (can be switch off with an option)
+* Improvement: using [idn_to_utf8](http://php.net/manual/en/function.idn-to-utf8.php "idn_to_utf8") when available
+* Updated FAQ
+* Updated Dutch and Flemish translations
+
+= 0.7 =
+* New feature: support for *Remember Me* check box
+* Updated Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
+
+= 0.6 =
+* New feature: option *Do not verify SSL certificate*
+* Updated Dutch and Flemish translations
+
+= 0.5 =
+* Improvement: more debug info
+* Tested with WordPress 3.1
+
+= 0.4 =
+* Bug fix: using site URL in stead of home URL
+* Updated FAQ
 
 = 0.3 =
 * Improvement: better error messages
@@ -105,6 +148,24 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 * Development version
 
 == Upgrade Notice ==
+
+= 0.9 =
+Two new features, translation update
+
+= 0.8 =
+One new feature, two improvements
+
+= 0.7 =
+One new feature
+
+= 0.6 =
+One new feature
+
+= 0.5 =
+One improvement
+
+= 0.4 =
+Bugfix
 
 = 0.3 =
 Three improvements
