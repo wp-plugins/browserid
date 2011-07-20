@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.9
+Version: 0.11
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -103,17 +103,9 @@ if (!class_exists('M66BrowserID')) {
 				// Get options
 				$options = get_option('browserid_options');
 
-				// Get assertion
+				// Get assertion/audience
 				$assertion = $_REQUEST['browserid_assertion'];
-
-				// Get audience & decode IDN
-				if (function_exists('idn_to_utf8'))
-					$audience = idn_to_utf8($_SERVER['HTTP_HOST']);
-				else {
-					require_once('idna_convert/idna_convert.class.php');
-					$IDN = new idna_convert();
-					$audience = $IDN->decode($_SERVER['HTTP_HOST']);
-				}
+				$audience = $_SERVER['HTTP_HOST'];
 
 				// Get verification server
 				if (isset($options['browserid_vserver']) && $options['browserid_vserver'])
@@ -380,23 +372,13 @@ if (!class_exists('M66BrowserID')) {
 			</div>
 <?php
 			if ($this->debug) {
-				if (function_exists('idn_to_utf8'))
-					$audience = idn_to_utf8($_SERVER['HTTP_HOST']);
-				else {
-					require_once('idna_convert/idna_convert.class.php');
-					$IDN = new idna_convert();
-					$audience = $IDN->decode($_SERVER['HTTP_HOST']);
-				}
-
 				$options = get_option('browserid_options');
 				$response = get_option(c_bid_option_response);
 				$result = json_decode($response['body'], true);
 
 				echo '<p><strong>PHP Time</strong>: ' . time() . ' > ' . date('c', time()) . '</p>';
 				echo '<p><strong>Assertion valid until</strong>: ' . $result['valid-until'] . ' > ' . date('c', $result['valid-until'] / 1000) . '</p>';
-				echo '<p><strong>idn_to_utf8 available</strong>: ' . (function_exists('idn_to_utf8') ? 'yes' : 'no') . '</p>';
 				echo '<p><strong>PHP audience</strong>: ' . $_SERVER['HTTP_HOST'] . '</p>';
-				echo '<p><strong>PHP audience UTF-8</strong>: ' . $audience . '</p>';
 				echo '<script type="text/javascript">';
 				echo 'document.write("<p><strong>JS audience</strong>: " + window.location.hostname + "</p>");';
 				echo '</script>';
