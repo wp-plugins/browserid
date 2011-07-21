@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.12
+Version: 0.13
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -103,9 +103,10 @@ if (!class_exists('M66BrowserID')) {
 				// Get options
 				$options = get_option('browserid_options');
 
-				// Get assertion/audience
+				// Get assertion/audience/remember me
 				$assertion = $_REQUEST['browserid_assertion'];
 				$audience = $_SERVER['HTTP_HOST'];
+				$rememberme = (isset($_REQUEST['rememberme']) && $_REQUEST['rememberme'] == 'true');
 
 				// Get verification server
 				if (isset($options['browserid_vserver']) && $options['browserid_vserver'])
@@ -125,17 +126,11 @@ if (!class_exists('M66BrowserID')) {
 				// Verify assertion
 				$response = wp_remote_get($url, $args);
 
-				// Get remember me flag
-				$rememberme = (isset($_REQUEST['rememberme']) && $_REQUEST['rememberme'] == 'true');
-
-				// Persist debug info
-				$response['vserver'] = $vserver;
-				$response['audience'] = $audience;
-				$response['rememberme'] = $rememberme;
-				update_option(c_bid_option_response, $response);
-
 				// Check result
 				if (is_wp_error($response)) {
+					// Persist debug info
+					update_option(c_bid_option_response, $response);
+
 					header('Content-type: text/plain');
 					if ($this->debug)
 						print_r($response);
@@ -143,6 +138,12 @@ if (!class_exists('M66BrowserID')) {
 						echo __($response->get_error_message()) . PHP_EOL;
 				}
 				else {
+					// Persist debug info
+					$response['vserver'] = $vserver;
+					$response['audience'] = $audience;
+					$response['rememberme'] = $rememberme;
+					update_option(c_bid_option_response, $response);
+
 					// Decode response
 					$result = json_decode($response['body'], true);
 
