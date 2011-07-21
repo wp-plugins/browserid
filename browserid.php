@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.13
+Version: 0.14
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -166,7 +166,10 @@ if (!class_exists('M66BrowserID')) {
 							$user = self::Login_by_email($result['email'], $rememberme);
 							if ($user) {
 								// Beam me up, Scotty!
-								wp_redirect(admin_url());
+								if (isset($options['browserid_login_redir']) && $options['browserid_login_redir'])
+									wp_redirect($options['browserid_login_redir']);
+								else
+									wp_redirect(admin_url());
 							}
 							else {
 								// User not found?
@@ -294,6 +297,7 @@ if (!class_exists('M66BrowserID')) {
 			add_settings_section('plugin_main', null, array(&$this, 'Options_main'), 'browserid');
 			add_settings_field('browserid_login_html', __('Custom login HTML:', c_bid_text_domain), array(&$this, 'Option_login_html'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_logout_html', __('Custom logout HTML:', c_bid_text_domain), array(&$this, 'Option_logout_html'), 'browserid', 'plugin_main');
+			add_settings_field('browserid_login_redir', __('Login redirection URL:', c_bid_text_domain), array(&$this, 'Option_login_redir'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_vserver', __('Verification server:', c_bid_text_domain), array(&$this, 'Option_vserver'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_novalid', __('Do not check valid until time:', c_bid_text_domain), array(&$this, 'Option_novalid'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_noverify', __('Do not verify SSL certificate:', c_bid_text_domain), array(&$this, 'Option_noverify'), 'browserid', 'plugin_main');
@@ -309,19 +313,26 @@ if (!class_exists('M66BrowserID')) {
 		// Login HTML option
 		function Option_login_html() {
 			$options = get_option('browserid_options');
-			echo "<input id='browserid_login_html' name='browserid_options[browserid_login_html]' type='text' size='80' value='{$options['browserid_login_html']}' />";
+			echo "<input id='browserid_login_html' name='browserid_options[browserid_login_html]' type='text' size='100' value='{$options['browserid_login_html']}' />";
 		}
 
 		// Logout HTML option
 		function Option_logout_html() {
 			$options = get_option('browserid_options');
-			echo "<input id='browserid_logout_html' name='browserid_options[browserid_logout_html]' type='text' size='80' value='{$options['browserid_logout_html']}' />";
+			echo "<input id='browserid_logout_html' name='browserid_options[browserid_logout_html]' type='text' size='100' value='{$options['browserid_logout_html']}' />";
+		}
+
+		// Login redir URL option
+		function Option_login_redir() {
+			$options = get_option('browserid_options');
+			echo "<input id='browserid_login_redir' name='browserid_options[browserid_login_redir]' type='text' size='100' value='{$options['browserid_login_redir']}' />";
+			echo '<br />' . __('Default WordPress dashboard', c_bid_text_domain);
 		}
 
 		// Verification server option
 		function Option_vserver() {
 			$options = get_option('browserid_options');
-			echo "<input id='browserid_vserver' name='browserid_options[browserid_vserver]' type='text' size='80' value='{$options['browserid_vserver']}' />";
+			echo "<input id='browserid_vserver' name='browserid_options[browserid_vserver]' type='text' size='100' value='{$options['browserid_vserver']}' />";
 			echo '<br />' . __('Default https://browserid.org/verify', c_bid_text_domain);
 		}
 
