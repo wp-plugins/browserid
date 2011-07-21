@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB
 Tags: security, admin, authentication, access, widget, login
 Requires at least: 3.1
 Tested up to: 3.2.1
-Stable tag: 0.11
+Stable tag: 0.12
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -12,7 +12,8 @@ Implementation of Mozilla BrowserID for WordPress
 
 "As a user of BrowserID, you confirm your email addresses once. Then, you can sign into any web site that supports BrowserID with just two clicks."
 
-This plugin adds a BrowserID login button to your login page. There is also a widget, shortcode and template tag. It is possible to customize the login and logout button/link.
+This plugin adds a BrowserID login button as an additional way to login to your login page.
+There is also a widget, shortcode and template tag. It is possible to customize the login and logout button/link.
 
 [BrowserID](https://browserid.org/ "BrowserID") is an open source experiment from the [Identity Team](http://identity.mozilla.com/ "Identity Team") at [Mozilla Labs](https://mozillalabs.com/ "Mozilla Labs").
 
@@ -98,8 +99,11 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 == Changelog ==
 
 = Next release =
-* Improvement: check issuer
 * Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
+
+= 0.12 =
+* Improvement: check issuer
+* Improvement: more debug info
 
 = 0.11 =
 * Fixed IDN
@@ -152,6 +156,9 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 * Development version
 
 == Upgrade Notice ==
+
+= 0.12 =
+Two improvements
 
 = 0.11 =
 Fixed IDN
