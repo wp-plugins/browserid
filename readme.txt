@@ -106,6 +106,8 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 = 0.15 =
 * **Protocol change**: verification with POST instead of GET
 * Improvement: no logout link on login page
+* Updated Dutch and Flemish translations
+* Updated Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
 
 = 0.14 =
 * New feature: option to redirect to set URL after login
