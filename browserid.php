@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.14
+Version: 0.15
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -108,23 +108,33 @@ if (!class_exists('M66BrowserID')) {
 				$audience = $_SERVER['HTTP_HOST'];
 				$rememberme = (isset($_REQUEST['rememberme']) && $_REQUEST['rememberme'] == 'true');
 
-				// Get verification server
+				// Get verification server URL
 				if (isset($options['browserid_vserver']) && $options['browserid_vserver'])
 					$vserver = $options['browserid_vserver'];
 				else
 					$vserver = 'https://browserid.org/verify';
 
-				// Build verification URL
-				$url = $vserver . '?assertion=' . $assertion . '&audience=' . $audience;
-
 				// No SSL verify?
-				if (isset($options['browserid_noverify']) && $options['browserid_noverify'])
-					$args = array('sslverify' => false);
-				else
-					$args = array();
+				$noverify = (isset($options['browserid_noverify']) && $options['browserid_noverify']);
+
+				// Build arguments
+				$args = array(
+					'method' => 'POST',
+					'timeout' => 30,
+					'redirection' => 0,
+					'httpversion' => '1.0',
+					'blocking' => true,
+					'headers' => array(),
+					'body' => array(
+						'assertion' => $assertion,
+						'audience' => $audience
+					),
+					'cookies' => array(),
+					'sslverify' => !$noverify
+				);
 
 				// Verify assertion
-				$response = wp_remote_get($url, $args);
+				$response = wp_remote_post($vserver, $args);
 
 				// Check result
 				if (is_wp_error($response)) {
@@ -244,7 +254,7 @@ if (!class_exists('M66BrowserID')) {
 
 		// Add login button to login form
 		function Login_form() {
-			echo '<p>' . self::Get_loginout_html() . '<br /><br /></p>';
+			echo '<p>' . self::Get_loginout_html(false) . '<br /><br /></p>';
 		}
 
 		// Shortcode "browserid_loginout"
@@ -253,11 +263,11 @@ if (!class_exists('M66BrowserID')) {
 		}
 
 		// Build HTML for login/out button/link
-		function Get_loginout_html() {
+		function Get_loginout_html($check_login = true) {
 			// Get options
 			$options = get_option('browserid_options');
 
-			if (is_user_logged_in()) {
+			if ($check_login && is_user_logged_in()) {
 				// User logged in
 				if (empty($options['browserid_logout_html']))
 					$html = '';
