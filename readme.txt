@@ -15,6 +15,8 @@ Implementation of Mozilla BrowserID for WordPress
 This plugin adds a BrowserID login button as an additional way to login to your login page.
 There is also a widget, shortcode and template tag. It is possible to customize the login and logout button/link.
 
+**The BrowserID protocol has been changed, upgrade to at least version 0.15 of the plugin !**
+
 [BrowserID](https://browserid.org/ "BrowserID") is an open source experiment from the [Identity Team](http://identity.mozilla.com/ "Identity Team") at [Mozilla Labs](https://mozillalabs.com/ "Mozilla Labs").
 
 **BrowserID and this plugin are experimental !**
@@ -22,7 +24,7 @@ There is also a widget, shortcode and template tag. It is possible to customize 
 Please report any issue you have with this plugin on the [support page](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/ "Marcel's weblog"), so I can at least try to fix it.
 If you rate this plugin low, please [let me know why](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/#respond "Marcel's weblog").
 
-See my [other plugins](http://wordpress.org/extend/plugins/profile/m66b "Marcel Bokhorst").
+See my [other plugins](http://wordpress.org/extend/plugins/profile/m66b "Marcel Bokhorst")
 
 == Installation ==
 
