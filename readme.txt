@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB
 Tags: security, admin, authentication, access, widget, login, shortcode
 Requires at least: 3.1
 Tested up to: 3.2.1
-Stable tag: 0.15
+Stable tag: 0.16
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -103,6 +103,9 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 = Next release =
 * Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
 
+= 0.16 =
+* Improvement: only load BrowserID script on login page
+
 = 0.15 =
 * **Protocol change**: verification with POST instead of GET
 * Improvement: no logout link on login page
@@ -170,6 +173,9 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 * Development version
 
 == Upgrade Notice ==
+
+= 0.16 =
+One improvement
 
 = 0.15 =
 Protocol change! Verification with POST instead of GET
