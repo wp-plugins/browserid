@@ -1,18 +1,19 @@
 === BrowserID ===
 Contributors: Marcel Bokhorst, M66B
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB7DGNA3MJ&lc=US&item_name=BrowserID%20WordPress%20plugin&item_number=Marcel%20Bokhorst&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
-Tags: security, admin, authentication, access, widget, login
-Requires at least: 3.2
+Tags: security, admin, authentication, access, widget, login, shortcode
+Requires at least: 3.1
 Tested up to: 3.2.1
-Stable tag: 0.3
+Stable tag: 0.18
 
 Implementation of Mozilla BrowserID for WordPress
 
 == Description ==
 
-As a user of BrowserID, you confirm your email addresses once. Then, you can sign into any web site that supports BrowserID with just two clicks.
+"*As a user of BrowserID, you confirm your email addresses once. Then, you can sign into any web site that supports BrowserID with just two clicks.*"
 
-This plugin adds a BrowserID login button to your login page. There is also a widget with a login button, which you can add to for example your side bar. It is possible to customize the login and logout button/link.
+This plugin adds a BrowserID login button as an additional way to login to your login page.
+There is also a widget, shortcode and template tag. It is possible to customize the login and logout button/link.
 
 [BrowserID](https://browserid.org/ "BrowserID") is an open source experiment from the [Identity Team](http://identity.mozilla.com/ "Identity Team") at [Mozilla Labs](https://mozillalabs.com/ "Mozilla Labs").
 
@@ -43,6 +44,14 @@ See my [other plugins](http://wordpress.org/extend/plugins/profile/m66b "Marcel 
 
 == Frequently Asked Questions ==
 
+= What is 'Custom login HTML for?' =
+
+Try putting the following into this option:
+
+`<img src="https://browserid.org/i/browserid_logo_sm.png" />`
+
+Now you will see the BrowserID logo instead of the login button.
+
 = Which server does verify the assertion? =
 
 The assertion is verified by the server at https://browserid.org/verify.
@@ -50,6 +59,7 @@ The assertion is verified by the server at https://browserid.org/verify.
 = I get 'SSL certificate problem, verify that the CA cert is OK' =
 
 Your hosting provider should take a look at the SSL certificates.
+You can check the option *Do not verify SSL certificate*, but please realize this isn't entirely safe.
 
 = I get 'Bad Gateway' =
 
@@ -71,6 +81,11 @@ If there isn't an error message, turn on debug mode to see the complete response
 Something went terribly wrong.
 If there isn't an error message, turn on debug mode to see the complete response.
 
+= I get 'Verification invalid' =
+
+Maybe the time of your hosting server is incorrect.
+You could check the option *Do not check valid until time* to solve this.
+
 = Where can I ask questions, report bugs and request features? =
 
 You can write comments on the [support page](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/ "Marcel's weblog").
@@ -85,6 +100,63 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 
 = Next release =
 * Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
+
+= 0.18 =
+* Improvement: workaround for bug in Microsoft IIS
+
+= 0.17 =
+* Improvement: applying filter *login_redirect*
+
+= 0.16 =
+* Improvement: only load BrowserID script on login page
+
+= 0.15 =
+* **Protocol change**: verification with POST instead of GET
+* Improvement: no logout link on login page
+* Updated Dutch and Flemish translations
+* Updated Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
+
+= 0.14 =
+* New feature: option to redirect to set URL after login
+
+= 0.13 =
+* Bug fix: correctly handling WordPress errors
+
+= 0.12 =
+* Improvement: check issuer
+* Improvement: more debug info
+
+= 0.11 =
+* Fixed IDN
+
+= 0.9 =
+* New feature: shortcode for login/out button/link: *[browserid_loginout]*
+* New feature: template tag for login/out button/link: *browserid_loginout*
+* Updated Dutch and Flemish translations
+* Updated Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
+
+= 0.8 =
+* New feature: option to set verification server
+* Improvement: checking assertion valid until time (can be switch off with an option)
+* Improvement: using [idn_to_utf8](http://php.net/manual/en/function.idn-to-utf8.php "idn_to_utf8") when available
+* Updated FAQ
+* Updated Dutch and Flemish translations
+
+= 0.7 =
+* New feature: support for *Remember Me* check box
+* Updated Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
+
+= 0.6 =
+* New feature: option *Do not verify SSL certificate*
+* Updated Dutch and Flemish translations
+
+= 0.5 =
+* Improvement: more debug info
+* Tested with WordPress 3.1
+
+= 0.4 =
+* Bug fix: using site URL in stead of home URL
+* Updated FAQ
 
 = 0.3 =
 * Improvement: better error messages
@@ -106,6 +178,48 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 
 == Upgrade Notice ==
 
+= 0.18 =
+One improvement
+
+= 0.17 =
+One improvement
+
+= 0.16 =
+One improvement
+
+= 0.15 =
+Protocol change! Verification with POST instead of GET
+
+= 0.14 =
+One new feature
+
+= 0.13 =
+One bugfix
+
+= 0.12 =
+Two improvements
+
+= 0.11 =
+Fixed IDN
+
+= 0.9 =
+Two new features, translation update
+
+= 0.8 =
+One new feature, two improvements
+
+= 0.7 =
+One new feature
+
+= 0.6 =
+One new feature
+
+= 0.5 =
+One improvement
+
+= 0.4 =
+Bugfix
+
 = 0.3 =
 Three improvements
 
@@ -120,4 +234,3 @@ First public release
 This plugin uses:
 
 * The client side [BrowserID script](https://browserid.org/include.js "BrowserID script")
-* [phlyLabs' pure PHP IDNA Converter](http://idnaconv.phlymail.de "IDNA Convert")
