@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.16
+Version: 0.17
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -177,9 +177,11 @@ if (!class_exists('M66BrowserID')) {
 							if ($user) {
 								// Beam me up, Scotty!
 								if (isset($options['browserid_login_redir']) && $options['browserid_login_redir'])
-									wp_redirect($options['browserid_login_redir']);
+									$redirect_to = $options['browserid_login_redir'];
 								else
-									wp_redirect(admin_url());
+									$redirect_to = admin_url();
+								$redirect_to = apply_filters('login_redirect', $redirect_to, '', $user);
+								wp_redirect($redirect_to);
 							}
 							else {
 								// User not found?
@@ -221,11 +223,15 @@ if (!class_exists('M66BrowserID')) {
 
 		// Login user using e-mail only
 		function Login_by_email($email, $rememberme) {
-			$user = get_user_by_email($email);
-			if ($user) {
-				wp_set_current_user($user->ID, $user->user_login);
-				wp_set_auth_cookie($user->ID, $rememberme);
-				do_action('wp_login', $user->user_login);
+			global $user;
+			$user = null;
+
+			$userdata = get_user_by_email($email);
+			if ($userdata) {
+				$user = new WP_User($userdata->ID);
+				wp_set_current_user($userdata->ID, $userdata->user_login);
+				wp_set_auth_cookie($userdata->ID, $rememberme);
+				do_action('wp_login', $userdata->user_login);
 			}
 			return $user;
 		}
