@@ -10,7 +10,7 @@ Implementation of Mozilla BrowserID for WordPress
 
 == Description ==
 
-"As a user of BrowserID, you confirm your email addresses once. Then, you can sign into any web site that supports BrowserID with just two clicks."
+"*As a user of BrowserID, you confirm your email addresses once. Then, you can sign into any web site that supports BrowserID with just two clicks.*"
 
 This plugin adds a BrowserID login button as an additional way to login to your login page.
 There is also a widget, shortcode and template tag. It is possible to customize the login and logout button/link.
