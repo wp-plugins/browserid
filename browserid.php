@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.17
+Version: 0.18
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -97,6 +97,10 @@ if (!class_exists('M66BrowserID')) {
 		function Init() {
 			// I18n
 			load_plugin_textdomain(c_bid_text_domain, false, dirname(plugin_basename(__FILE__)));
+
+			// Workaround for Microsoft IIS bug
+			if (isset($_REQUEST['?browserid_assertion']))
+				$_REQUEST['browserid_assertion'] = $_REQUEST['?browserid_assertion'];
 
 			// Verify received assertion
 			if (isset($_REQUEST['browserid_assertion'])) {
@@ -408,13 +412,18 @@ if (!class_exists('M66BrowserID')) {
 			if ($this->debug) {
 				$options = get_option('browserid_options');
 				$response = get_option(c_bid_option_response);
-				$result = json_decode($response['body'], true);
+				if (is_wp_error($response))
+					$result = $response;
+				else
+					$result = json_decode($response['body'], true);
 
 				echo '<p><strong>Site URL</strong>: ' . get_site_url() . ' (WordPress address / folder)</p>';
 				echo '<p><strong>Home URL</strong>: ' . get_home_url() . ' (Blog address / Home page)</p>';
 
-				echo '<p><strong>PHP Time</strong>: ' . time() . ' > ' . date('c', time()) . '</p>';
-				echo '<p><strong>Assertion valid until</strong>: ' . $result['valid-until'] . ' > ' . date('c', $result['valid-until'] / 1000) . '</p>';
+				if (!is_wp_error($result)) {
+					echo '<p><strong>PHP Time</strong>: ' . time() . ' > ' . date('c', time()) . '</p>';
+					echo '<p><strong>Assertion valid until</strong>: ' . $result['valid-until'] . ' > ' . date('c', $result['valid-until'] / 1000) . '</p>';
+				}
 
 				echo '<p><strong>PHP audience</strong>: ' . $_SERVER['HTTP_HOST'] . '</p>';
 				echo '<script type="text/javascript">';
