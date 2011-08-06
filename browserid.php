@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.3
+Version: 0.20
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -35,8 +35,7 @@ if (version_compare(PHP_VERSION, '5.0.0', '<'))
 // Define constants
 define('c_bid_text_domain', 'browserid');
 define('c_bid_option_version', 'bid_version');
-
-require_once('idna_convert/idna_convert.class.php');
+define('c_bid_option_response', 'bid_response');
 
 // Define class
 if (!class_exists('M66BrowserID')) {
@@ -65,24 +64,28 @@ if (!class_exists('M66BrowserID')) {
 
 			// Register actions
 			add_action('init', array(&$this, 'Init'), 0);
-			add_action('wp_head', array(&$this, 'WP_head'));
-			add_action('login_head', array(&$this, 'WP_head'));
+			add_action('login_head', array(&$this, 'Login_head'));
 			add_action('login_form', array(&$this, 'Login_form'));
 			add_action('widgets_init', create_function('', 'return register_widget("BrowserID_Widget");'));
 			if (is_admin()) {
 				add_action('admin_menu', array(&$this, 'Admin_menu'));
 				add_action('admin_init', array(&$this, 'Admin_init'));
 			}
+
+			// Shortcode
+			add_shortcode('browserid_loginout', array(&$this, 'Shortcode_loginout'));
 		}
 
 		// Handle plugin activation
 		function Activate() {
 			global $wpdb;
 			$version = get_option(c_bid_option_version);
-			if ($version < 1) {
+			if ($version < 2) {
+				$options = get_option('browserid_options');
+				$options['browserid_logout_html'] = __('Logout', c_bid_text_domain);
+				update_option('browserid_options', $options);
 			}
-			if ($version < 1)
-				update_option(c_bid_option_version, 1);
+			update_option(c_bid_option_version, 2);
 		}
 
 		// Handle plugin deactivation
@@ -94,53 +97,121 @@ if (!class_exists('M66BrowserID')) {
 			// I18n
 			load_plugin_textdomain(c_bid_text_domain, false, dirname(plugin_basename(__FILE__)));
 
-			// BrowserID assertion
-			if (isset($_REQUEST['browserid_assertion'])) {
-				// Build URL
-				$assertion = $_REQUEST['browserid_assertion'];
-				$IDN = new idna_convert();
-				$audience = $IDN->decode($_SERVER['HTTP_HOST']);
-				$url = 'https://browserid.org/verify?assertion=' . $assertion . '&audience=' . $audience;
+			// Workaround for Microsoft IIS bug
+			if (isset($_REQUEST['?browserid_assertion']))
+				$_REQUEST['browserid_assertion'] = $_REQUEST['?browserid_assertion'];
 
-				// Verify
-				$response = wp_remote_get($url);
+			// Verify received assertion
+			if (isset($_REQUEST['browserid_assertion'])) {
+				// Get options
+				$options = get_option('browserid_options');
+
+				// Get assertion/audience/remember me
+				$assertion = $_REQUEST['browserid_assertion'];
+				$audience = $_SERVER['HTTP_HOST'];
+				$rememberme = (isset($_REQUEST['rememberme']) && $_REQUEST['rememberme'] == 'true');
+
+				// Get verification server URL
+				if (isset($options['browserid_vserver']) && $options['browserid_vserver'])
+					$vserver = $options['browserid_vserver'];
+				else
+					$vserver = 'https://browserid.org/verify';
+
+				// No SSL verify?
+				$noverify = (isset($options['browserid_noverify']) && $options['browserid_noverify']);
+
+				// Build arguments
+				$args = array(
+					'method' => 'POST',
+					'timeout' => 30,
+					'redirection' => 0,
+					'httpversion' => '1.0',
+					'blocking' => true,
+					'headers' => array(),
+					'body' => array(
+						'assertion' => $assertion,
+						'audience' => $audience
+					),
+					'cookies' => array(),
+					'sslverify' => !$noverify
+				);
+
+				// Verify assertion
+				$response = wp_remote_post($vserver, $args);
 
 				// Check result
 				if (is_wp_error($response)) {
+					// Persist debug info
+					update_option(c_bid_option_response, $response);
+
 					header('Content-type: text/plain');
-					echo __($response->get_error_message()) . PHP_EOL;
+					if ($this->debug)
+						print_r($response);
+					else
+						echo __($response->get_error_message()) . PHP_EOL;
 				}
 				else {
-					// Decode result
-					$result = json_decode($response['body']);
-					if (empty($result) || empty($result->status)) {
+					// Persist debug info
+					$response['vserver'] = $vserver;
+					$response['audience'] = $audience;
+					$response['rememberme'] = $rememberme;
+					update_option(c_bid_option_response, $response);
+
+					// Decode response
+					$result = json_decode($response['body'], true);
+
+					// Check result
+					if (empty($result) || empty($result['status'])) {
 						// No result or status
 						header('Content-type: text/plain');
 						echo __('Verification void', c_bid_text_domain) . PHP_EOL;
-						echo $result->response->message . PHP_EOL;
+						echo $response['response']['message'] . PHP_EOL;
 						if ($this->debug)
 							print_r($response);
 					}
-					else if ($result->status == 'okay' && $result->audience == $audience) {
-						// Succeeded
-						$user = self::Login_by_email($result->email);
-						if ($user)
-							wp_redirect(admin_url());
+					else if ($result['status'] == 'okay' && $result['audience'] == $audience &&
+						parse_url($result['issuer'], PHP_URL_HOST) == parse_url($vserver, PHP_URL_HOST)) {
+						// Check valid until time
+						$novalid = (isset($options['browserid_novalid']) && $options['browserid_novalid']);
+						if ($novalid || time() < $result['valid-until'] / 1000)
+						{
+							// Succeeded
+							$user = self::Login_by_email($result['email'], $rememberme);
+							if ($user) {
+								// Beam me up, Scotty!
+								if (isset($options['browserid_login_redir']) && $options['browserid_login_redir'])
+									$redirect_to = $options['browserid_login_redir'];
+								else
+									$redirect_to = admin_url();
+								$redirect_to = apply_filters('login_redirect', $redirect_to, '', $user);
+								wp_redirect($redirect_to);
+							}
+							else {
+								// User not found?
+								header('Content-type: text/plain');
+								echo __('Login failed', c_bid_text_domain) . ' (' . $result['email'] . ')' . PHP_EOL;
+								if ($this->debug)
+									print_r($result);
+							}
+						}
 						else {
-							// User not found?
 							header('Content-type: text/plain');
-							echo __('Login failed', c_bid_text_domain) . ' (' . $result->email . ')' . PHP_EOL;
-							if ($this->debug)
+							echo __('Verification invalid', c_bid_text_domain) . PHP_EOL;
+							if ($this->debug) {
+								echo 'time=' . time() . PHP_EOL;
 								print_r($result);
+							}
 						}
 					}
 					else {
 						// Failed
 						header('Content-type: text/plain');
 						echo __('Verification failed', c_bid_text_domain) . PHP_EOL;
-						echo $result->reason . PHP_EOL;
+						if (isset($result['reason']))
+							echo $result['reason'] . PHP_EOL;
 						if ($this->debug) {
 							echo 'audience=' . $audience . PHP_EOL;
+							echo 'vserver=' . $vserver . PHP_EOL;
 							print_r($result);
 						}
 					}
@@ -149,45 +220,91 @@ if (!class_exists('M66BrowserID')) {
 			}
 
 			// Enqueue BrowserID script
-			wp_enqueue_script('browserid', 'https://browserid.org/include.js');
+			if (strpos(strtolower($_SERVER['REQUEST_URI']), 'wp-login.php') !== false)
+				wp_enqueue_script('browserid', 'https://browserid.org/include.js');
 		}
 
-		// Log WordPress user in using e-mail address
-		function Login_by_email($email) {
-			$user = get_user_by_email($email);
-			if ($user) {
-				wp_set_current_user($user->ID, $user->user_login);
-				wp_set_auth_cookie($user->ID);
-				do_action('wp_login', $user->user_login);
+		// Login user using e-mail only
+		function Login_by_email($email, $rememberme) {
+			global $user;
+			$user = null;
+
+			$userdata = get_user_by_email($email);
+			if ($userdata) {
+				$user = new WP_User($userdata->ID);
+				wp_set_current_user($userdata->ID, $userdata->user_login);
+				wp_set_auth_cookie($userdata->ID, $rememberme);
+				do_action('wp_login', $userdata->user_login);
 			}
 			return $user;
 		}
 
-		// Define login JavaScript function
-		function WP_head() {
-?>
-			<script type="text/javascript">
-				function browserid_login() {
-					navigator.id.getVerifiedEmail(function(assertion) {
-						if (assertion)
-							window.location='<?php echo get_home_url(); ?>?browserid_assertion=' + assertion;
-						else
-							alert("<?php _e('Verification failed', c_bid_text_domain); ?>");
-					});
-					return false;
-				}
-			</script>
-<?php
+		// Add scripts to login page
+		function Login_head() {
+			echo self::Get_scripts();
 		}
 
-		// Add login button to login form
+		// Add login button to login page
 		function Login_form() {
+			echo '<p>' . self::Get_loginout_html(false) . '<br /><br /></p>';
+		}
+
+		// Shortcode "browserid_loginout"
+		function Shortcode_loginout() {
+			return self::Get_scripts(true) . self::Get_loginout_html();
+		}
+
+		// Get scripts
+		function Get_scripts($browserid = false) {
+			$html = '';
+			if ($browserid)
+				$html .= '<script src="https://browserid.org/include.js" type="text/javascript"></script>' . PHP_EOL;
+			$html .= '<script type="text/javascript">' . PHP_EOL;
+			$html .= '	function browserid_login() {' . PHP_EOL;
+			$html .= '		navigator.id.getVerifiedEmail(function(assertion) {' . PHP_EOL;
+			$html .= '			if (assertion) {' . PHP_EOL;
+			$html .= '				rememberme = document.getElementById("rememberme");' . PHP_EOL;
+			$html .= '				if (rememberme != null)' . PHP_EOL;
+			$html .= '					rememberme = rememberme.checked;' . PHP_EOL;
+			$html .= '				window.location="' . get_site_url() . '?browserid_assertion=" + assertion + "&rememberme=" + rememberme;' . PHP_EOL;
+			$html .= '			}' . PHP_EOL;
+			$html .= '			else {' . PHP_EOL;
+			$html .= '				/* Sorry, no error message */' . PHP_EOL;
+			$html .= '				alert("' . __('Verification failed', c_bid_text_domain) . '");' . PHP_EOL;
+			$html .= '			}' . PHP_EOL;
+			$html .= '		});' . PHP_EOL;
+			$html .= '		return false;' . PHP_EOL;
+			$html .= '	}' . PHP_EOL;
+			$html .= '</script>' . PHP_EOL;
+			return $html;
+		}
+
+		// Build HTML for login/out button/link
+		function Get_loginout_html($check_login = true) {
+			// Get options
 			$options = get_option('browserid_options');
-			if (empty($options['browserid_login_html']))
-				$html = '<img src="https://browserid.org/i/sign_in_blue.png" style="border: 0;" />';
-			else
-				$html = $options['browserid_login_html'];
-			echo '<p><a href="#" onclick="return browserid_login();">' . $html . '</a><br /><br /></p>';
+
+			if ($check_login && is_user_logged_in()) {
+				// User logged in
+				if (empty($options['browserid_logout_html']))
+					$html = '';
+				else
+					$html = $options['browserid_logout_html'];
+				// Simple link
+				if (empty($html))
+					return '';
+				else
+					return '<a href="' . wp_logout_url() . '">' . $html . '</a>';
+			}
+			else {
+				// User not logged in
+				if (empty($options['browserid_login_html']))
+					$html = '<img src="https://browserid.org/i/sign_in_blue.png" style="border: 0;" />';
+				else
+					$html = $options['browserid_login_html'];
+				// Button
+				return '<a href="#" onclick="return browserid_login();">' . $html . '</a>';
+			}
 		}
 
 		// Register options page
@@ -207,24 +324,59 @@ if (!class_exists('M66BrowserID')) {
 			add_settings_section('plugin_main', null, array(&$this, 'Options_main'), 'browserid');
 			add_settings_field('browserid_login_html', __('Custom login HTML:', c_bid_text_domain), array(&$this, 'Option_login_html'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_logout_html', __('Custom logout HTML:', c_bid_text_domain), array(&$this, 'Option_logout_html'), 'browserid', 'plugin_main');
+			add_settings_field('browserid_login_redir', __('Login redirection URL:', c_bid_text_domain), array(&$this, 'Option_login_redir'), 'browserid', 'plugin_main');
+			add_settings_field('browserid_vserver', __('Verification server:', c_bid_text_domain), array(&$this, 'Option_vserver'), 'browserid', 'plugin_main');
+			add_settings_field('browserid_novalid', __('Do not check valid until time:', c_bid_text_domain), array(&$this, 'Option_novalid'), 'browserid', 'plugin_main');
+			add_settings_field('browserid_noverify', __('Do not verify SSL certificate:', c_bid_text_domain), array(&$this, 'Option_noverify'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_nospsn', __('I don\'t want to support this plugin with the Sustainable Plugins Sponsorship Network:', c_bid_text_domain), array(&$this, 'Option_nospsn'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_debug', __('Debug mode:', c_bid_text_domain), array(&$this, 'Option_debug'), 'browserid', 'plugin_main');
-  		}
+		}
 
 		// Main options section
 		function Options_main() {
+			// Empty
 		}
 
 		// Login HTML option
 		function Option_login_html() {
 			$options = get_option('browserid_options');
-			echo "<input id='browserid_login_html' name='browserid_options[browserid_login_html]' type='text' size='80' value='{$options['browserid_login_html']}' />";
+			echo "<input id='browserid_login_html' name='browserid_options[browserid_login_html]' type='text' size='100' value='{$options['browserid_login_html']}' />";
 		}
 
 		// Logout HTML option
 		function Option_logout_html() {
 			$options = get_option('browserid_options');
-			echo "<input id='browserid_logout_html' name='browserid_options[browserid_logout_html]' type='text' size='80' value='{$options['browserid_logout_html']}' />";
+			echo "<input id='browserid_logout_html' name='browserid_options[browserid_logout_html]' type='text' size='100' value='{$options['browserid_logout_html']}' />";
+		}
+
+		// Login redir URL option
+		function Option_login_redir() {
+			$options = get_option('browserid_options');
+			echo "<input id='browserid_login_redir' name='browserid_options[browserid_login_redir]' type='text' size='100' value='{$options['browserid_login_redir']}' />";
+			echo '<br />' . __('Default WordPress dashboard', c_bid_text_domain);
+		}
+
+		// Verification server option
+		function Option_vserver() {
+			$options = get_option('browserid_options');
+			echo "<input id='browserid_vserver' name='browserid_options[browserid_vserver]' type='text' size='100' value='{$options['browserid_vserver']}' />";
+			echo '<br />' . __('Default https://browserid.org/verify', c_bid_text_domain);
+		}
+
+		// No valid until option
+		function Option_novalid() {
+			$options = get_option('browserid_options');
+			$chk = (isset($options['browserid_novalid']) && $options['browserid_novalid'] ? " checked='checked'" : '');
+			echo "<input id='browserid_novalid' name='browserid_options[browserid_novalid]' type='checkbox'" . $chk. "/>";
+			echo '<strong>' . __('Security risk!', c_bid_text_domain) . '</strong>';
+		}
+
+		// No SSL verify option
+		function Option_noverify() {
+			$options = get_option('browserid_options');
+			$chk = (isset($options['browserid_noverify']) && $options['browserid_noverify'] ? " checked='checked'" : '');
+			echo "<input id='browserid_noverify' name='browserid_options[browserid_noverify]' type='checkbox'" . $chk. "/>";
+			echo '<strong>' . __('Security risk!', c_bid_text_domain) . '</strong>';
 		}
 
 		// SPSN option
@@ -239,6 +391,7 @@ if (!class_exists('M66BrowserID')) {
 			$options = get_option('browserid_options');
 			$chk = (isset($options['browserid_debug']) && $options['browserid_debug'] ? " checked='checked'" : '');
 			echo "<input id='browserid_debug' name='browserid_options[browserid_debug]' type='checkbox'" . $chk. "/>";
+			echo '<strong>' . __('Security risk!', c_bid_text_domain) . '</strong>';
 		}
 
 		// Render options page
@@ -263,23 +416,33 @@ if (!class_exists('M66BrowserID')) {
 			</div>
 <?php
 			if ($this->debug) {
-				echo '<p>idn_to_utf8: ' . (function_exists('idn_to_utf8') ? 'Yes' : 'No') . '</p>';
+				$options = get_option('browserid_options');
+				$response = get_option(c_bid_option_response);
+				if (is_wp_error($response))
+					$result = $response;
+				else
+					$result = json_decode($response['body'], true);
 
-				$IDN = new idna_convert();
-				$input = 'www.xn--idyry-yua.no';
-				$output = $IDN->decode($input);
-				echo '<p>' . $input . ' -> ' . $output . '</p>';
+				echo '<p><strong>Site URL</strong>: ' . get_site_url() . ' (WordPress address / folder)</p>';
+				echo '<p><strong>Home URL</strong>: ' . get_home_url() . ' (Blog address / Home page)</p>';
 
-				$IDN = new idna_convert();
-				$input = 'blog.bokhorst.biz';
-				$output = $IDN->decode($input);
-				echo '<p>' . $input . ' -> ' . $output . '</p>';
+				if (!is_wp_error($result)) {
+					echo '<p><strong>PHP Time</strong>: ' . time() . ' > ' . date('c', time()) . '</p>';
+					echo '<p><strong>Assertion valid until</strong>: ' . $result['valid-until'] . ' > ' . date('c', $result['valid-until'] / 1000) . '</p>';
+				}
 
-				echo '<br /><pre>' . print_r($_SERVER, true) . '</pre>';
+				echo '<p><strong>PHP audience</strong>: ' . $_SERVER['HTTP_HOST'] . '</p>';
+				echo '<script type="text/javascript">';
+				echo 'document.write("<p><strong>JS audience</strong>: " + window.location.hostname + "</p>");';
+				echo '</script>';
+
+				echo '<br /><pre>Options=' . htmlentities(print_r($options, true)) . '</pre>';
+				echo '<br /><pre>Response=' . htmlentities(print_r($response, true)) . '</pre>';
+				echo '<br /><pre>Server=' . htmlentities(print_r($_SERVER, true)) . '</pre>';
 			}
 		}
 
-		// SPSN script
+		// Render Sustainable Plugins Sponsorship Network
 		function Render_SPSN() {
 			$options = get_option('browserid_options');
 			if (!(isset($options['browserid_nospsn']) && $options['browserid_nospsn'])) {
@@ -298,13 +461,14 @@ if (!class_exists('M66BrowserID')) {
 		function Check_prerequisites() {
 			// Check WordPress version
 			global $wp_version;
-			if (version_compare($wp_version, '3.0') < 0)
-				die('BrowserID requires at least WordPress 3.0');
+			if (version_compare($wp_version, '3.1') < 0)
+				die('BrowserID requires at least WordPress 3.1');
 
 			// Check basic prerequisities
 			self::Check_function('add_action');
 			self::Check_function('wp_enqueue_script');
 			self::Check_function('json_decode');
+			self::Check_function('parse_url');
 		}
 
 		function Check_function($name) {
@@ -321,28 +485,17 @@ if (!class_exists('M66BrowserID')) {
 
 class BrowserID_Widget extends WP_Widget {
 	function BrowserID_Widget() {
-		$widget_ops = array('classname' => 'widget_browserid', 'description' => '');
+		$widget_ops = array(
+			'classname' => 'browserid_widget',
+			'description' => __('BrowserID login button', c_bid_text_domain)
+		);
 		$this->WP_Widget('BrowserID_Widget', 'BrowserID', $widget_ops);
 	}
 
 	// Widget contents
 	function widget($args, $instance) {
-		$options = get_option('browserid_options');
-
-		if (is_user_logged_in()) {
-			if (empty($options['browserid_logout_html']))
-				$html = 'Logout';
-			else
-				$html = $options['browserid_logout_html'];
-			echo '<a href="' . wp_logout_url() . '">' . $html . '</a>';
-		}
-		else {
-			if (empty($options['browserid_login_html']))
-				$html = '<img src="https://browserid.org/i/sign_in_blue.png" style="border: 0;" />';
-			else
-				$html = $options['browserid_login_html'];
-			echo '<a href="#" onclick="return browserid_login();">' . $html . '</a>';
-		}
+		echo M66BrowserID::Get_scripts(true);
+		echo M66BrowserID::Get_loginout_html();
 	}
 
 	// Update settings
@@ -373,6 +526,14 @@ global $m66browserid;
 if (empty($m66browserid)) {
 	$m66browserid = new M66BrowserID();
 	register_activation_hook(__FILE__, array(&$m66browserid, 'Activate'));
+}
+
+// Template tag "browserid_loginout"
+if (!function_exists('browserid_loginout')) {
+	function browserid_loginout() {
+		echo M66BrowserID::Get_scripts(true);
+		echo M66BrowserID::Get_loginout_html();
+	}
 }
 
 ?>
