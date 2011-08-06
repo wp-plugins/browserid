@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.19
+Version: 0.20
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -64,7 +64,7 @@ if (!class_exists('M66BrowserID')) {
 
 			// Register actions
 			add_action('init', array(&$this, 'Init'), 0);
-			add_action('login_head', array(&$this, 'Print_scripts'));
+			add_action('login_head', array(&$this, 'Login_head'));
 			add_action('login_form', array(&$this, 'Login_form'));
 			add_action('widgets_init', create_function('', 'return register_widget("BrowserID_Widget");'));
 			if (is_admin()) {
@@ -239,43 +239,44 @@ if (!class_exists('M66BrowserID')) {
 			return $user;
 		}
 
-		// Add login button to login form
+		// Add scripts to login page
+		function Login_head() {
+			echo self::Get_scripts();
+		}
+
+		// Add login button to login page
 		function Login_form() {
 			echo '<p>' . self::Get_loginout_html(false) . '<br /><br /></p>';
 		}
 
 		// Shortcode "browserid_loginout"
 		function Shortcode_loginout() {
-			ob_start();
-			$this->Print_scripts(true);
-			$output = ob_get_contents();
-			ob_end_clean();
-			return $output . self::Get_loginout_html();
+			return self::Get_scripts(true) . self::Get_loginout_html();
 		}
 
-		// Print needed scripts
-		function Print_scripts($browserid = false) {
+		// Get scripts
+		function Get_scripts($browserid = false) {
+			$html = '';
 			if ($browserid)
-				echo '<script src="https://browserid.org/include.js" type="text/javascript"></script>';
-?>
-			<script type="text/javascript">
-				function browserid_login() {
-					navigator.id.getVerifiedEmail(function(assertion) {
-						if (assertion) {
-							rememberme = document.getElementById('rememberme');
-							if (rememberme != null)
-								rememberme = rememberme.checked;
-							window.location='<?php echo get_site_url(); ?>?browserid_assertion=' + assertion + '&rememberme=' + rememberme;
-						}
-						else {
-							/* Sorry, no error message */
-							alert("<?php _e('Verification failed', c_bid_text_domain); ?>");
-						}
-					});
-					return false;
-				}
-			</script>
-<?php
+				$html .= '<script src="https://browserid.org/include.js" type="text/javascript"></script>' . PHP_EOL;
+			$html .= '<script type="text/javascript">' . PHP_EOL;
+			$html .= '	function browserid_login() {' . PHP_EOL;
+			$html .= '		navigator.id.getVerifiedEmail(function(assertion) {' . PHP_EOL;
+			$html .= '			if (assertion) {' . PHP_EOL;
+			$html .= '				rememberme = document.getElementById("rememberme");' . PHP_EOL;
+			$html .= '				if (rememberme != null)' . PHP_EOL;
+			$html .= '					rememberme = rememberme.checked;' . PHP_EOL;
+			$html .= '				window.location="' . get_site_url() . '?browserid_assertion=" + assertion + "&rememberme=" + rememberme;' . PHP_EOL;
+			$html .= '			}' . PHP_EOL;
+			$html .= '			else {' . PHP_EOL;
+			$html .= '				/* Sorry, no error message */' . PHP_EOL;
+			$html .= '				alert("' . __('Verification failed', c_bid_text_domain) . '");' . PHP_EOL;
+			$html .= '			}' . PHP_EOL;
+			$html .= '		});' . PHP_EOL;
+			$html .= '		return false;' . PHP_EOL;
+			$html .= '	}' . PHP_EOL;
+			$html .= '</script>' . PHP_EOL;
+			return $html;
 		}
 
 		// Build HTML for login/out button/link
@@ -493,7 +494,7 @@ class BrowserID_Widget extends WP_Widget {
 
 	// Widget contents
 	function widget($args, $instance) {
-		M66BrowserID::Print_scripts(true);
+		echo M66BrowserID::Get_scripts(true);
 		echo M66BrowserID::Get_loginout_html();
 	}
 
@@ -530,7 +531,7 @@ if (empty($m66browserid)) {
 // Template tag "browserid_loginout"
 if (!function_exists('browserid_loginout')) {
 	function browserid_loginout() {
-		M66BrowserID::Print_scripts(true);
+		echo M66BrowserID::Get_scripts(true);
 		echo M66BrowserID::Get_loginout_html();
 	}
 }

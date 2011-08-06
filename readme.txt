@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB
 Tags: security, admin, authentication, access, widget, login, shortcode
 Requires at least: 3.1
 Tested up to: 3.2.1
-Stable tag: 0.19
+Stable tag: 0.20
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -101,6 +101,9 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 = Next release =
 * Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
 
+= 0.20 =
+* Bugfix: shortcode still not working
+
 = 0.19 =
 * Bugfix: widget, shortcode, template tag not working
 
@@ -180,6 +183,9 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 * Development version
 
 == Upgrade Notice ==
+
+= 0.20 =
+One bugfix
 
 = 0.19 =
 One bugfix
