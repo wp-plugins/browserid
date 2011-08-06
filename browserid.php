@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.18
+Version: 0.19
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -64,8 +64,7 @@ if (!class_exists('M66BrowserID')) {
 
 			// Register actions
 			add_action('init', array(&$this, 'Init'), 0);
-			add_action('wp_head', array(&$this, 'WP_head'));
-			add_action('login_head', array(&$this, 'WP_head'));
+			add_action('login_head', array(&$this, 'Print_scripts'));
 			add_action('login_form', array(&$this, 'Login_form'));
 			add_action('widgets_init', create_function('', 'return register_widget("BrowserID_Widget");'));
 			if (is_admin()) {
@@ -240,8 +239,24 @@ if (!class_exists('M66BrowserID')) {
 			return $user;
 		}
 
-		// Define login JavaScript function
-		function WP_head() {
+		// Add login button to login form
+		function Login_form() {
+			echo '<p>' . self::Get_loginout_html(false) . '<br /><br /></p>';
+		}
+
+		// Shortcode "browserid_loginout"
+		function Shortcode_loginout() {
+			ob_start();
+			$this->Print_scripts(true);
+			$output = ob_get_contents();
+			ob_end_clean();
+			return $output . self::Get_loginout_html();
+		}
+
+		// Print needed scripts
+		function Print_scripts($browserid = false) {
+			if ($browserid)
+				echo '<script src="https://browserid.org/include.js" type="text/javascript"></script>';
 ?>
 			<script type="text/javascript">
 				function browserid_login() {
@@ -261,16 +276,6 @@ if (!class_exists('M66BrowserID')) {
 				}
 			</script>
 <?php
-		}
-
-		// Add login button to login form
-		function Login_form() {
-			echo '<p>' . self::Get_loginout_html(false) . '<br /><br /></p>';
-		}
-
-		// Shortcode "browserid_loginout"
-		function Shortcode_loginout() {
-			return self::Get_loginout_html();
 		}
 
 		// Build HTML for login/out button/link
@@ -324,7 +329,7 @@ if (!class_exists('M66BrowserID')) {
 			add_settings_field('browserid_noverify', __('Do not verify SSL certificate:', c_bid_text_domain), array(&$this, 'Option_noverify'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_nospsn', __('I don\'t want to support this plugin with the Sustainable Plugins Sponsorship Network:', c_bid_text_domain), array(&$this, 'Option_nospsn'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_debug', __('Debug mode:', c_bid_text_domain), array(&$this, 'Option_debug'), 'browserid', 'plugin_main');
-  		}
+		}
 
 		// Main options section
 		function Options_main() {
@@ -488,6 +493,7 @@ class BrowserID_Widget extends WP_Widget {
 
 	// Widget contents
 	function widget($args, $instance) {
+		M66BrowserID::Print_scripts(true);
 		echo M66BrowserID::Get_loginout_html();
 	}
 
@@ -524,6 +530,7 @@ if (empty($m66browserid)) {
 // Template tag "browserid_loginout"
 if (!function_exists('browserid_loginout')) {
 	function browserid_loginout() {
+		M66BrowserID::Print_scripts(true);
 		echo M66BrowserID::Get_loginout_html();
 	}
 }
