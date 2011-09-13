@@ -10,8 +10,6 @@ Implementation of Mozilla BrowserID for WordPress
 
 == Description ==
 
-*Support for this plugin has been ended, read [here](http://wordpress.org/support/topic/protest-no-updates-for-this-plugin-the-next-30-days/page/2#post-2334777) why*
-
 "*As a user of BrowserID, you confirm your email addresses once. Then, you can sign into any web site that supports BrowserID with just two clicks.*"
 
 This plugin adds a BrowserID login button as an additional way to login to your login page.
