@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.21
+Version: 0.22
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
