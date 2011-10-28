@@ -52,7 +52,7 @@ Try putting the following into this option:
 
 Now you will see the BrowserID logo instead of the login button.
 
-= Which server does verify the assertion? =
+= Which server verifies the assertion? =
 
 The assertion is verified by the server at https://browserid.org/verify.
 
