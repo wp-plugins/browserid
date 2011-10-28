@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.20
+Version: 0.22
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -169,11 +169,10 @@ if (!class_exists('M66BrowserID')) {
 						if ($this->debug)
 							print_r($response);
 					}
-					else if ($result['status'] == 'okay' && $result['audience'] == $audience &&
-						parse_url($result['issuer'], PHP_URL_HOST) == parse_url($vserver, PHP_URL_HOST)) {
-						// Check valid until time
+					else if ($result['status'] == 'okay' && $result['audience'] == $audience && $result['issuer'] == parse_url($vserver, PHP_URL_HOST)) {
+						// Check expire time
 						$novalid = (isset($options['browserid_novalid']) && $options['browserid_novalid']);
-						if ($novalid || time() < $result['valid-until'] / 1000)
+						if ($novalid || time() < $result['expires'] / 1000)
 						{
 							// Succeeded
 							$user = self::Login_by_email($result['email'], $rememberme);
@@ -211,7 +210,8 @@ if (!class_exists('M66BrowserID')) {
 							echo $result['reason'] . PHP_EOL;
 						if ($this->debug) {
 							echo 'audience=' . $audience . PHP_EOL;
-							echo 'vserver=' . $vserver . PHP_EOL;
+							echo 'vserver=' . parse_url($vserver, PHP_URL_HOST) . PHP_EOL;
+							echo 'time=' . time() . PHP_EOL;
 							print_r($result);
 						}
 					}
@@ -340,18 +340,24 @@ if (!class_exists('M66BrowserID')) {
 		// Login HTML option
 		function Option_login_html() {
 			$options = get_option('browserid_options');
+			if (empty($options['browserid_login_html']))
+				$options['browserid_login_html'] = null;
 			echo "<input id='browserid_login_html' name='browserid_options[browserid_login_html]' type='text' size='100' value='{$options['browserid_login_html']}' />";
 		}
 
 		// Logout HTML option
 		function Option_logout_html() {
 			$options = get_option('browserid_options');
+			if (empty($options['browserid_logout_html']))
+				$options['browserid_logout_html'] = null;
 			echo "<input id='browserid_logout_html' name='browserid_options[browserid_logout_html]' type='text' size='100' value='{$options['browserid_logout_html']}' />";
 		}
 
 		// Login redir URL option
 		function Option_login_redir() {
 			$options = get_option('browserid_options');
+			if (empty($options['browserid_login_redir']))
+				$options['browserid_login_redir'] = null;
 			echo "<input id='browserid_login_redir' name='browserid_options[browserid_login_redir]' type='text' size='100' value='{$options['browserid_login_redir']}' />";
 			echo '<br />' . __('Default WordPress dashboard', c_bid_text_domain);
 		}
@@ -359,6 +365,8 @@ if (!class_exists('M66BrowserID')) {
 		// Verification server option
 		function Option_vserver() {
 			$options = get_option('browserid_options');
+			if (empty($options['browserid_vserver']))
+				$options['browserid_vserver'] = null;
 			echo "<input id='browserid_vserver' name='browserid_options[browserid_vserver]' type='text' size='100' value='{$options['browserid_vserver']}' />";
 			echo '<br />' . __('Default https://browserid.org/verify', c_bid_text_domain);
 		}
@@ -428,7 +436,7 @@ if (!class_exists('M66BrowserID')) {
 
 				if (!is_wp_error($result)) {
 					echo '<p><strong>PHP Time</strong>: ' . time() . ' > ' . date('c', time()) . '</p>';
-					echo '<p><strong>Assertion valid until</strong>: ' . $result['valid-until'] . ' > ' . date('c', $result['valid-until'] / 1000) . '</p>';
+					echo '<p><strong>Assertion valid until</strong>: ' . $result['expires'] . ' > ' . date('c', $result['expires'] / 1000) . '</p>';
 				}
 
 				echo '<p><strong>PHP audience</strong>: ' . $_SERVER['HTTP_HOST'] . '</p>';
