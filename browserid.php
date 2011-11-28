@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.23
+Version: 0.24
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -328,7 +328,6 @@ if (!class_exists('M66BrowserID')) {
 			add_settings_field('browserid_vserver', __('Verification server:', c_bid_text_domain), array(&$this, 'Option_vserver'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_novalid', __('Do not check valid until time:', c_bid_text_domain), array(&$this, 'Option_novalid'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_noverify', __('Do not verify SSL certificate:', c_bid_text_domain), array(&$this, 'Option_noverify'), 'browserid', 'plugin_main');
-			add_settings_field('browserid_nospsn', __('I don\'t want to support this plugin with the Sustainable Plugins Sponsorship Network:', c_bid_text_domain), array(&$this, 'Option_nospsn'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_debug', __('Debug mode:', c_bid_text_domain), array(&$this, 'Option_debug'), 'browserid', 'plugin_main');
 		}
 
@@ -387,13 +386,6 @@ if (!class_exists('M66BrowserID')) {
 			echo '<strong>' . __('Security risk!', c_bid_text_domain) . '</strong>';
 		}
 
-		// SPSN option
-		function Option_nospsn() {
-			$options = get_option('browserid_options');
-			$chk = (isset($options['browserid_nospsn']) && $options['browserid_nospsn'] ? " checked='checked'" : '');
-			echo "<input id='browserid_nospsn' name='browserid_options[browserid_nospsn]' type='checkbox'" . $chk. "/>";
-		}
-
 		// Debug option
 		function Option_debug() {
 			$options = get_option('browserid_options');
@@ -404,8 +396,6 @@ if (!class_exists('M66BrowserID')) {
 
 		// Render options page
 		function Administration() {
-			// Sustainable Plugins Sponsorship Network
-			self::Render_SPSN();
 ?>
 			<div class="wrap">
 			<h2><?php _e('BrowserID', c_bid_text_domain); ?></h2>
@@ -447,21 +437,6 @@ if (!class_exists('M66BrowserID')) {
 				echo '<br /><pre>Options=' . htmlentities(print_r($options, true)) . '</pre>';
 				echo '<br /><pre>Response=' . htmlentities(print_r($response, true)) . '</pre>';
 				echo '<br /><pre>Server=' . htmlentities(print_r($_SERVER, true)) . '</pre>';
-			}
-		}
-
-		// Render Sustainable Plugins Sponsorship Network
-		function Render_SPSN() {
-			$options = get_option('browserid_options');
-			if (!(isset($options['browserid_nospsn']) && $options['browserid_nospsn'])) {
-?>
-				<script type="text/javascript">
-				var psHost = (("https:" == document.location.protocol) ? "https://" : "http://");
-				document.write(unescape("%3Cscript src='" + psHost + "pluginsponsors.com/direct/spsn/display.php?client=browserid&spot=' type='text/javascript'%3E%3C/script%3E"));
-				</script>
-				<a class="bid_spsn" href="http://pluginsponsors.com/privacy.html" target="_blank">
-				<?php _e('Privacy in the Sustainable Plugins Sponsorship Network', c_bid_text_domain); ?></a>
-<?php
 			}
 		}
 
