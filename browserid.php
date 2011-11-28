@@ -3,7 +3,7 @@
 Plugin Name: BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
 Description: BrowserID provides a safer and easier way to sign in
-Version: 0.20
+Version: 0.24
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -169,11 +169,10 @@ if (!class_exists('M66BrowserID')) {
 						if ($this->debug)
 							print_r($response);
 					}
-					else if ($result['status'] == 'okay' && $result['audience'] == $audience &&
-						parse_url($result['issuer'], PHP_URL_HOST) == parse_url($vserver, PHP_URL_HOST)) {
-						// Check valid until time
+					else if ($result['status'] == 'okay' && $result['audience'] == $audience && $result['issuer'] == parse_url($vserver, PHP_URL_HOST)) {
+						// Check expire time
 						$novalid = (isset($options['browserid_novalid']) && $options['browserid_novalid']);
-						if ($novalid || time() < $result['valid-until'] / 1000)
+						if ($novalid || time() < $result['expires'] / 1000)
 						{
 							// Succeeded
 							$user = self::Login_by_email($result['email'], $rememberme);
@@ -211,7 +210,8 @@ if (!class_exists('M66BrowserID')) {
 							echo $result['reason'] . PHP_EOL;
 						if ($this->debug) {
 							echo 'audience=' . $audience . PHP_EOL;
-							echo 'vserver=' . $vserver . PHP_EOL;
+							echo 'vserver=' . parse_url($vserver, PHP_URL_HOST) . PHP_EOL;
+							echo 'time=' . time() . PHP_EOL;
 							print_r($result);
 						}
 					}
@@ -229,7 +229,7 @@ if (!class_exists('M66BrowserID')) {
 			global $user;
 			$user = null;
 
-			$userdata = get_user_by_email($email);
+			$userdata = get_user_by('email', $email);
 			if ($userdata) {
 				$user = new WP_User($userdata->ID);
 				wp_set_current_user($userdata->ID, $userdata->user_login);
@@ -328,7 +328,6 @@ if (!class_exists('M66BrowserID')) {
 			add_settings_field('browserid_vserver', __('Verification server:', c_bid_text_domain), array(&$this, 'Option_vserver'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_novalid', __('Do not check valid until time:', c_bid_text_domain), array(&$this, 'Option_novalid'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_noverify', __('Do not verify SSL certificate:', c_bid_text_domain), array(&$this, 'Option_noverify'), 'browserid', 'plugin_main');
-			add_settings_field('browserid_nospsn', __('I don\'t want to support this plugin with the Sustainable Plugins Sponsorship Network:', c_bid_text_domain), array(&$this, 'Option_nospsn'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_debug', __('Debug mode:', c_bid_text_domain), array(&$this, 'Option_debug'), 'browserid', 'plugin_main');
 		}
 
@@ -340,18 +339,24 @@ if (!class_exists('M66BrowserID')) {
 		// Login HTML option
 		function Option_login_html() {
 			$options = get_option('browserid_options');
+			if (empty($options['browserid_login_html']))
+				$options['browserid_login_html'] = null;
 			echo "<input id='browserid_login_html' name='browserid_options[browserid_login_html]' type='text' size='100' value='{$options['browserid_login_html']}' />";
 		}
 
 		// Logout HTML option
 		function Option_logout_html() {
 			$options = get_option('browserid_options');
+			if (empty($options['browserid_logout_html']))
+				$options['browserid_logout_html'] = null;
 			echo "<input id='browserid_logout_html' name='browserid_options[browserid_logout_html]' type='text' size='100' value='{$options['browserid_logout_html']}' />";
 		}
 
 		// Login redir URL option
 		function Option_login_redir() {
 			$options = get_option('browserid_options');
+			if (empty($options['browserid_login_redir']))
+				$options['browserid_login_redir'] = null;
 			echo "<input id='browserid_login_redir' name='browserid_options[browserid_login_redir]' type='text' size='100' value='{$options['browserid_login_redir']}' />";
 			echo '<br />' . __('Default WordPress dashboard', c_bid_text_domain);
 		}
@@ -359,6 +364,8 @@ if (!class_exists('M66BrowserID')) {
 		// Verification server option
 		function Option_vserver() {
 			$options = get_option('browserid_options');
+			if (empty($options['browserid_vserver']))
+				$options['browserid_vserver'] = null;
 			echo "<input id='browserid_vserver' name='browserid_options[browserid_vserver]' type='text' size='100' value='{$options['browserid_vserver']}' />";
 			echo '<br />' . __('Default https://browserid.org/verify', c_bid_text_domain);
 		}
@@ -379,13 +386,6 @@ if (!class_exists('M66BrowserID')) {
 			echo '<strong>' . __('Security risk!', c_bid_text_domain) . '</strong>';
 		}
 
-		// SPSN option
-		function Option_nospsn() {
-			$options = get_option('browserid_options');
-			$chk = (isset($options['browserid_nospsn']) && $options['browserid_nospsn'] ? " checked='checked'" : '');
-			echo "<input id='browserid_nospsn' name='browserid_options[browserid_nospsn]' type='checkbox'" . $chk. "/>";
-		}
-
 		// Debug option
 		function Option_debug() {
 			$options = get_option('browserid_options');
@@ -396,8 +396,6 @@ if (!class_exists('M66BrowserID')) {
 
 		// Render options page
 		function Administration() {
-			// Sustainable Plugins Sponsorship Network
-			self::Render_SPSN();
 ?>
 			<div class="wrap">
 			<h2><?php _e('BrowserID', c_bid_text_domain); ?></h2>
@@ -428,7 +426,7 @@ if (!class_exists('M66BrowserID')) {
 
 				if (!is_wp_error($result)) {
 					echo '<p><strong>PHP Time</strong>: ' . time() . ' > ' . date('c', time()) . '</p>';
-					echo '<p><strong>Assertion valid until</strong>: ' . $result['valid-until'] . ' > ' . date('c', $result['valid-until'] / 1000) . '</p>';
+					echo '<p><strong>Assertion valid until</strong>: ' . $result['expires'] . ' > ' . date('c', $result['expires'] / 1000) . '</p>';
 				}
 
 				echo '<p><strong>PHP audience</strong>: ' . $_SERVER['HTTP_HOST'] . '</p>';
@@ -439,21 +437,6 @@ if (!class_exists('M66BrowserID')) {
 				echo '<br /><pre>Options=' . htmlentities(print_r($options, true)) . '</pre>';
 				echo '<br /><pre>Response=' . htmlentities(print_r($response, true)) . '</pre>';
 				echo '<br /><pre>Server=' . htmlentities(print_r($_SERVER, true)) . '</pre>';
-			}
-		}
-
-		// Render Sustainable Plugins Sponsorship Network
-		function Render_SPSN() {
-			$options = get_option('browserid_options');
-			if (!(isset($options['browserid_nospsn']) && $options['browserid_nospsn'])) {
-?>
-				<script type="text/javascript">
-				var psHost = (("https:" == document.location.protocol) ? "https://" : "http://");
-				document.write(unescape("%3Cscript src='" + psHost + "pluginsponsors.com/direct/spsn/display.php?client=browserid&spot=' type='text/javascript'%3E%3C/script%3E"));
-				</script>
-				<a class="bid_spsn" href="http://pluginsponsors.com/privacy.html" target="_blank">
-				<?php _e('Privacy in the Sustainable Plugins Sponsorship Network', c_bid_text_domain); ?></a>
-<?php
 			}
 		}
 
