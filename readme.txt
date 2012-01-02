@@ -98,8 +98,22 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 
 == Changelog ==
 
-= Next release =
-* Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
+= Development version =
+* Improvement: store debug info only when debugging enabled
+* Improvement: add trailing slash to site URL
+* Improvement: respect login redirect to parameter
+* Improvement: better error messages
+
+Follow these steps to install the development version:
+
+* Download the development version by clicking on [this link](http://downloads.wordpress.org/plugin/browserid.zip)
+* Go to *Plugins* on your WordPress dashboard
+* *Deactivate* BrowserID
+* *Delete* BrowserID (*Yes, delete these files*)
+* Click *Add New*
+* Click *Upload* (a link at the top)
+* Click *Choose file* and select the file you downloaded before
+* Click *Install*, then *Activate Plugin*
 
 = 0.24 =
 * Removed [Sustainable Plugins Sponsorship Network](http://pluginsponsors.com/)
