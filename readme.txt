@@ -3,8 +3,8 @@ Contributors: Marcel Bokhorst, M66B
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB7DGNA3MJ&lc=US&item_name=BrowserID%20WordPress%20plugin&item_number=Marcel%20Bokhorst&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
 Tags: security, admin, authentication, access, widget, login, shortcode
 Requires at least: 3.1
-Tested up to: 3.3
-Stable tag: 0.24
+Tested up to: 3.3.1
+Stable tag: 0.25
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -99,10 +99,6 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 == Changelog ==
 
 = Development version =
-* Improvement: store debug info only when debugging enabled
-* Improvement: add trailing slash to site URL
-* Improvement: respect login redirect to parameter
-* Improvement: better error messages
 
 Follow these steps to install the development version:
 
@@ -114,6 +110,13 @@ Follow these steps to install the development version:
 * Click *Upload* (a link at the top)
 * Click *Choose file* and select the file you downloaded before
 * Click *Install*, then *Activate Plugin*
+
+= 0.25 =
+* Improvement: store debug info only when debugging enabled
+* Improvement: add trailing slash to site URL
+* Improvement: respect login redirect to parameter
+* Improvement: better error messages
+* Thanks to [mitcho](http://mitcho.com "mitcho") for the suggestions and testing!
 
 = 0.24 =
 * Removed [Sustainable Plugins Sponsorship Network](http://pluginsponsors.com/)
@@ -210,6 +213,9 @@ Follow these steps to install the development version:
 * Development version
 
 == Upgrade Notice ==
+
+= 0.25 =
+Four improvements
 
 = 0.24 =
 Compliance
