@@ -100,7 +100,7 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 
 = Development version =
 * New feature: BrowserID for comments (option)
-* Improvement: added title to BrowserID button
+* Improvement: added title to BrowserID buttons
 * Improvement: files instead of inline JavaScript script
 * Updated Dutch and Flemish translations
 

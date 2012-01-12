@@ -183,18 +183,30 @@ if (!class_exists('M66BrowserID')) {
 							if (self::Is_comment()) {
 								// Add author name
 								if (empty($_POST['author'])) {
+									// Existing user?
 									$userdata = get_user_by('email', $result['email']);
 									if ($userdata)
 										$_POST['author'] = $userdata->display_name;
 									else {
-										$email = explode('@', $result['email']);
-										$_POST['author'] = $email[0];
+										// Gravatar profile?
+										$hash = md5($result['email']);
+										$response = wp_remote_get('http://www.gravatar.com/' . $hash . '.json');
+										if (is_wp_error($response)) {
+											// Based on e-mail
+											$email = explode('@', $result['email']);
+											$_POST['author'] = $email[0];
+										}
+										else {
+											$json = json_decode($response['body']);
+											$_POST['author'] = $json->entry[0]->displayName;
+										}
 									}
 								}
 								// Add author e-mail
 								$_POST['email'] = $result['email'];
 							}
 							else {
+								// Login
 								$user = self::Login_by_email($result['email'], $rememberme);
 								if ($user) {
 									// Beam me up, Scotty!
@@ -519,6 +531,7 @@ if (!class_exists('M66BrowserID')) {
 				echo '</script>';
 
 				echo '<br /><pre>Options=' . htmlentities(print_r($options, true)) . '</pre>';
+
 				echo '<br /><pre>Response=' . htmlentities(print_r($response, true)) . '</pre>';
 				echo '<br /><pre>Server=' . htmlentities(print_r($_SERVER, true)) . '</pre>';
 			}
@@ -536,6 +549,9 @@ if (!class_exists('M66BrowserID')) {
 			self::Check_function('wp_enqueue_script');
 			self::Check_function('json_decode');
 			self::Check_function('parse_url');
+			self::Check_function('md5');
+			self::Check_function('wp_remote_post');
+			self::Check_function('wp_remote_get');
 		}
 
 		function Check_function($name) {
