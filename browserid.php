@@ -600,6 +600,10 @@ if (!class_exists('M66BrowserID')) {
 				echo '<br /><pre>PHP request=' . htmlentities(print_r($_REQUEST, true)) . '</pre>';
 				echo '<br /><pre>PHP server=' . htmlentities(print_r($_SERVER, true)) . '</pre>';
 			}
+			else {
+				delete_option(c_bid_option_request);
+				delete_option(c_bid_option_response);
+			}
 		}
 
 		// Check environment
