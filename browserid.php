@@ -35,6 +35,7 @@ if (version_compare(PHP_VERSION, '5.0.0', '<'))
 // Define constants
 define('c_bid_text_domain', 'browserid');
 define('c_bid_option_version', 'bid_version');
+define('c_bid_option_request', 'bid_request');
 define('c_bid_option_response', 'bid_response');
 
 // Define class
@@ -139,6 +140,7 @@ if (!class_exists('M66BrowserID')) {
 					'cookies' => array(),
 					'sslverify' => !$noverify
 				);
+				update_option(c_bid_option_request, $vserver . ' ' . print_r($args, true));
 
 				// Verify assertion
 				$response = wp_remote_post($vserver, $args);
@@ -571,6 +573,7 @@ if (!class_exists('M66BrowserID')) {
 <?php
 			if ($this->debug) {
 				$options = get_option('browserid_options');
+				$request = get_option(c_bid_option_request);
 				$response = get_option(c_bid_option_response);
 				if (is_wp_error($response))
 					$result = $response;
@@ -580,7 +583,7 @@ if (!class_exists('M66BrowserID')) {
 				echo '<p><strong>Site URL</strong>: ' . get_site_url() . ' (WordPress address / folder)</p>';
 				echo '<p><strong>Home URL</strong>: ' . get_home_url() . ' (Blog address / Home page)</p>';
 
-				if (!is_wp_error($result)) {
+				if (!empty($result) && !is_wp_error($result)) {
 					echo '<p><strong>PHP Time</strong>: ' . time() . ' > ' . date('c', time()) . '</p>';
 					echo '<p><strong>Assertion valid until</strong>: ' . $result['expires'] . ' > ' . date('c', $result['expires'] / 1000) . '</p>';
 				}
@@ -591,9 +594,10 @@ if (!class_exists('M66BrowserID')) {
 				echo '</script>';
 
 				echo '<br /><pre>Options=' . htmlentities(print_r($options, true)) . '</pre>';
-
-				echo '<br /><pre>Response=' . htmlentities(print_r($response, true)) . '</pre>';
-				echo '<br /><pre>Server=' . htmlentities(print_r($_SERVER, true)) . '</pre>';
+				echo '<br /><pre>BID request=' . htmlentities(print_r($request, true)) . '</pre>';
+				echo '<br /><pre>BID response=' . htmlentities(print_r($response, true)) . '</pre>';
+				echo '<br /><pre>PHP request=' . htmlentities(print_r($_REQUEST, true)) . '</pre>';
+				echo '<br /><pre>PHP server=' . htmlentities(print_r($_SERVER, true)) . '</pre>';
 			}
 		}
 
