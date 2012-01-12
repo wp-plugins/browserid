@@ -108,6 +108,7 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 * New feature: bbPress integration (beta)
 * Improvement: added title/class to BrowserID buttons
 * Improvement: files instead of inline JavaScript script
+* Improvement: added 'What is?' link
 * Updated Dutch and Flemish translations
 
 Follow these steps to install the development version:
