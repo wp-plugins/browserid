@@ -140,7 +140,8 @@ if (!class_exists('M66BrowserID')) {
 					'cookies' => array(),
 					'sslverify' => !$noverify
 				);
-				update_option(c_bid_option_request, $vserver . ' ' . print_r($args, true));
+				if ($this->debug)
+					update_option(c_bid_option_request, $vserver . ' ' . print_r($args, true));
 
 				// Verify assertion
 				$response = wp_remote_post($vserver, $args);
