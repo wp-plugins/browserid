@@ -390,6 +390,7 @@ if (!class_exists('M66BrowserID')) {
 
 				// Render link
 				echo '<a href="#" id="browserid_' . $post_id . '" onclick="return browserid_comment(' . $post_id . ');" title="BrowserID" class="browserid">' . $html . '</a>';
+				echo self::What_is();
 
 				// Display error message
 				if (isset($_REQUEST['browserid_error'])) {
@@ -429,12 +430,18 @@ if (!class_exists('M66BrowserID')) {
 				else
 					$html = $options['browserid_login_html'];
 				// Button
-				return '<a href="#" onclick="return browserid_login();"  title="BrowserID" class="browserid">' . $html . '</a>';
+				$html = '<a href="#" onclick="return browserid_login();"  title="BrowserID" class="browserid">' . $html . '</a>';
+				$html .= '<br />' . self::What_is();
+				return $html;
 			}
 		}
 
 		function Get_default_img() {
 			return '<img src="https://browserid.org/i/sign_in_blue.png" style="border: 0; vertical-align: middle;" />';
+		}
+
+		function What_is() {
+			return '<a href="https://browserid.org/" target="_blank" style="font-size: smaller;">' . __('What is BrowserID?', c_bid_text_domain) . '</a>';
 		}
 
 		// Register options page
