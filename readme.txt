@@ -99,6 +99,10 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 == Changelog ==
 
 = Development version =
+* New feature: BrowserID for comments (option)
+* Improvement: added title to BrowserID button
+* Improvement: files instead of inline JavaScript script
+* Updated Dutch and Flemish translations
 
 Follow these steps to install the development version:
 

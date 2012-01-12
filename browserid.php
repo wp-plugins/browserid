@@ -54,6 +54,7 @@ if (!class_exists('M66BrowserID')) {
 
 			// Register actions
 			add_action('init', array(&$this, 'Init'), 0);
+			add_action('wp_head', array(&$this, 'WP_head'));
 			add_action('login_head', array(&$this, 'Login_head'));
 			add_filter('login_message', array(&$this, 'Login_message'));
 			add_action('login_form', array(&$this, 'Login_form'));
@@ -62,6 +63,8 @@ if (!class_exists('M66BrowserID')) {
 				add_action('admin_menu', array(&$this, 'Admin_menu'));
 				add_action('admin_init', array(&$this, 'Admin_init'));
 			}
+			if (isset($options['browserid_comments']) && $options['browserid_comments'])
+				add_action('comment_form', array(&$this, 'Comment_form'));
 
 			// Shortcode
 			add_shortcode('browserid_loginout', array(&$this, 'Shortcode_loginout'));
@@ -81,6 +84,7 @@ if (!class_exists('M66BrowserID')) {
 
 		// Handle plugin deactivation
 		function Deactivate() {
+			// TODO: delete options
 		}
 
 		// Initialization
@@ -88,15 +92,15 @@ if (!class_exists('M66BrowserID')) {
 			// I18n
 			load_plugin_textdomain(c_bid_text_domain, false, dirname(plugin_basename(__FILE__)));
 
+			// Get options
+			$options = get_option('browserid_options');
+
 			// Workaround for Microsoft IIS bug
 			if (isset($_REQUEST['?browserid_assertion']))
 				$_REQUEST['browserid_assertion'] = $_REQUEST['?browserid_assertion'];
 
 			// Verify received assertion
 			if (isset($_REQUEST['browserid_assertion'])) {
-				// Get options
-				$options = get_option('browserid_options');
-
 				// Get assertion/audience/remember me
 				$assertion = $_REQUEST['browserid_assertion'];
 				$audience = $_SERVER['HTTP_HOST'];
@@ -139,13 +143,10 @@ if (!class_exists('M66BrowserID')) {
 						header('Content-type: text/plain');
 						echo $message . PHP_EOL;
 						print_r($response);
-						echo self::Get_error_url($message);
 						exit();
 					}
-					else {
-						wp_redirect(self::Get_error_url($message));
-						exit();
-					}
+					else
+						self::Handle_error($message);
 				}
 				else {
 					// Persist debug info
@@ -170,10 +171,8 @@ if (!class_exists('M66BrowserID')) {
 							print_r($response);
 							exit();
 						}
-						else {
-							wp_redirect(self::Get_error_url($message));
-							exit();
-						}
+						else
+							self::Handle_error($message);
 					}
 					else if ($result['status'] == 'okay' && $result['audience'] == $audience && $result['issuer'] == parse_url($vserver, PHP_URL_HOST)) {
 						// Check expire time
@@ -181,32 +180,46 @@ if (!class_exists('M66BrowserID')) {
 						if ($novalid || time() < $result['expires'] / 1000)
 						{
 							// Succeeded
-							$user = self::Login_by_email($result['email'], $rememberme);
-							if ($user) {
-								// Beam me up, Scotty!
-								if (isset($options['browserid_login_redir']) && $options['browserid_login_redir'])
-									$redirect_to = $options['browserid_login_redir'];
-								else if (isset($_REQUEST['redirect_to']))
-									$redirect_to = $_REQUEST['redirect_to'];
-								else
-									$redirect_to = admin_url();
-								$redirect_to = apply_filters('login_redirect', $redirect_to, '', $user);
-								wp_redirect($redirect_to);
-								exit();
+							if (self::Is_comment()) {
+								// Add author name
+								if (empty($_POST['author'])) {
+									$userdata = get_user_by('email', $result['email']);
+									if ($userdata)
+										$_POST['author'] = $userdata->display_name;
+									else {
+										$email = explode('@', $result['email']);
+										$_POST['author'] = $email[0];
+									}
+								}
+								// Add author e-mail
+								$_POST['email'] = $result['email'];
 							}
 							else {
-								// User not found?
-								$message = __('Login failed', c_bid_text_domain);
-								$message .= ' (' . $result['email'] . ')';
-								if ($this->debug) {
-									header('Content-type: text/plain');
-									echo $message . PHP_EOL;
-									print_r($result);
+								$user = self::Login_by_email($result['email'], $rememberme);
+								if ($user) {
+									// Beam me up, Scotty!
+									if (isset($options['browserid_login_redir']) && $options['browserid_login_redir'])
+										$redirect_to = $options['browserid_login_redir'];
+									else if (isset($_REQUEST['redirect_to']))
+										$redirect_to = $_REQUEST['redirect_to'];
+									else
+										$redirect_to = admin_url();
+									$redirect_to = apply_filters('login_redirect', $redirect_to, '', $user);
+									wp_redirect($redirect_to);
 									exit();
 								}
 								else {
-									wp_redirect(self::Get_error_url($message));
-									exit();
+									// User not found?
+									$message = __('Login failed', c_bid_text_domain);
+									$message .= ' (' . $result['email'] . ')';
+									if ($this->debug) {
+										header('Content-type: text/plain');
+										echo $message . PHP_EOL;
+										print_r($result);
+										exit();
+									}
+									else
+										self::Handle_error($message);
 								}
 							}
 						}
@@ -219,17 +232,15 @@ if (!class_exists('M66BrowserID')) {
 								print_r($result);
 								exit();
 							}
-							else {
-								wp_redirect(self::Get_error_url($message));
-								exit();
-							}
+							else
+								self::Handle_error($message);
 						}
 					}
 					else {
 						// Failed
 						$message = __('Verification failed', c_bid_text_domain);
 						if (isset($result['reason']))
-							$message .= ' ' . $result['reason'];
+							$message .= ': ' . __($result['reason'], c_bid_text_domain);
 						if ($this->debug) {
 							header('Content-type: text/plain');
 							echo $message . PHP_EOL;
@@ -239,20 +250,24 @@ if (!class_exists('M66BrowserID')) {
 							print_r($result);
 							exit();
 						}
-						else {
-							wp_redirect(self::Get_error_url($message));
-							exit();
-						}
+						else
+							self::Handle_error($message);
 					}
 				}
 			}
 
-			// Enqueue BrowserID script
-			if (strpos(strtolower($_SERVER['REQUEST_URI']), 'wp-login.php') !== false)
-				wp_enqueue_script('browserid', 'https://browserid.org/include.js');
+			// Enqueue BrowserID scripts
+			wp_enqueue_script('browserid', 'https://browserid.org/include.js');
+			wp_enqueue_script('browserid_login', plugins_url('login.js', __FILE__), array('browserid'));
+
+			// Prepare BrowserID for comments
+			if (isset($options['browserid_comments']) && $options['browserid_comments']) {
+				wp_enqueue_script('jquery');
+				wp_enqueue_script('browserid_comments', plugins_url('comments.js', __FILE__), array('jquery', 'browserid'));
+			}
 		}
 
-		// Login user using e-mail only
+		// Login user using e-mail address
 		function Login_by_email($email, $rememberme) {
 			global $user;
 			$user = null;
@@ -267,14 +282,38 @@ if (!class_exists('M66BrowserID')) {
 			return $user;
 		}
 
-		function Get_error_url($message) {
-			$login_url = wp_login_url(isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : null);
-			return $login_url . (strpos($login_url, '?') === false ? '?' : '&') . 'browserid_error=' . urlencode($message);
+		// Determine if login or comment
+		function Is_comment() {
+			return (isset($_REQUEST['browserid_comment']) ? $_REQUEST['browserid_comment'] : null);
 		}
 
-		// Add scripts to login page
+		// Generic error handling
+		function Handle_error($message) {
+			$post_id = self::Is_comment();
+			$redirect = isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : null;
+			$url = ($post_id ? get_permalink($post_id) : wp_login_url($redirect));
+			$url .= (strpos($url, '?') === false ? '?' : '&') . 'browserid_error=' . urlencode($message);
+			if ($post_id)
+				$url .= '#browserid_' . $post_id;
+			wp_redirect($url);
+			exit();
+		}
+
+		// i18n comments
+		function WP_head() {
+			echo '<script type="text/javascript">' . PHP_EOL;
+			echo 'var browserid_failed="' . __('Verification failed', c_bid_text_domain) . '";' . PHP_EOL;
+			echo '</script>' . PHP_EOL;
+		}
+
+		// i18n login
 		function Login_head() {
-			echo self::Get_scripts();
+			echo '<script type="text/javascript">' . PHP_EOL;
+			echo 'var browserid_siteurl="' . get_site_url(null, '/') . '";' . PHP_EOL;
+			echo 'var browserid_redirect=';
+			echo (isset($_REQUEST['redirect_to']) ? '"' . urlencode($_REQUEST['redirect_to']) . '"' : 'null') . ';' . PHP_EOL;
+			echo 'var browserid_failed="' . __('Verification failed', c_bid_text_domain) . '";' . PHP_EOL;
+			echo '</script>' . PHP_EOL;
 		}
 
 		// Filter login error message
@@ -289,38 +328,31 @@ if (!class_exists('M66BrowserID')) {
 			echo '<p>' . self::Get_loginout_html(false) . '<br /><br /></p>';
 		}
 
-		// Shortcode "browserid_loginout"
-		function Shortcode_loginout() {
-			return self::Get_scripts(true) . self::Get_loginout_html();
+		// Add BrowserID to comment form
+		function Comment_form($post_id) {
+			if (!is_user_logged_in()) {
+				// Get link content
+				$options = get_option('browserid_options');
+				if (empty($options['browserid_login_html']))
+					$html = '<img src="https://browserid.org/i/sign_in_blue.png" style="border: 0;" />';
+				else
+					$html = $options['browserid_login_html'];
+
+				// Render link
+				echo '<a href="#" id="browserid_' . $post_id . '" onclick="return browserid_comment(' . $post_id . ');" title="BrowserID">' . $html . '</a>';
+
+				// Display error message
+				if (isset($_REQUEST['browserid_error'])) {
+					echo '<span style="color: red; font-weight: bold; margin: 10px; vertical-align: top;">';
+					echo htmlspecialchars(stripslashes($_REQUEST['browserid_error']), ENT_QUOTES, get_bloginfo('charset'));
+					echo '</span>';
+				}
+			}
 		}
 
-		// Get scripts
-		function Get_scripts($browserid = false) {
-			$html = '';
-			if ($browserid)
-				$html .= '<script src="https://browserid.org/include.js" type="text/javascript"></script>' . PHP_EOL;
-			$html .= '<script type="text/javascript">' . PHP_EOL;
-			$html .= '  function browserid_login() {' . PHP_EOL;
-			$html .= '	  navigator.id.getVerifiedEmail(function(assertion) {' . PHP_EOL;
-			$html .= '		  if (assertion) {' . PHP_EOL;
-			$html .= '			  rememberme = document.getElementById("rememberme");' . PHP_EOL;
-			$html .= '			  if (rememberme != null)' . PHP_EOL;
-			$html .= '				  rememberme = rememberme.checked;' . PHP_EOL;
-			$html .= '			  window.location="' . get_site_url(null, '/');
-			$html .= '?browserid_assertion=" + assertion + "&rememberme=" + rememberme';
-			if (isset($_REQUEST['redirect_to']))
-				$html .= ' + "&redirect_to=' . urlencode($_REQUEST['redirect_to']) . '"';
-			$html .= ';' . PHP_EOL;
-			$html .= '		  }' . PHP_EOL;
-			$html .= '		  else {' . PHP_EOL;
-			$html .= '			  /* Sorry, no error message */' . PHP_EOL;
-			$html .= '			  alert("' . __('Verification failed', c_bid_text_domain) . '");' . PHP_EOL;
-			$html .= '		  }' . PHP_EOL;
-			$html .= '	  });' . PHP_EOL;
-			$html .= '	  return false;' . PHP_EOL;
-			$html .= '  }' . PHP_EOL;
-			$html .= '</script>' . PHP_EOL;
-			return $html;
+		// Shortcode "browserid_loginout"
+		function Shortcode_loginout() {
+			return self::Get_loginout_html();
 		}
 
 		// Build HTML for login/out button/link
@@ -347,7 +379,7 @@ if (!class_exists('M66BrowserID')) {
 				else
 					$html = $options['browserid_login_html'];
 				// Button
-				return '<a href="#" onclick="return browserid_login();">' . $html . '</a>';
+				return '<a href="#" onclick="return browserid_login();"  title="BrowserID">' . $html . '</a>';
 			}
 		}
 
@@ -369,6 +401,7 @@ if (!class_exists('M66BrowserID')) {
 			add_settings_field('browserid_login_html', __('Custom login HTML:', c_bid_text_domain), array(&$this, 'Option_login_html'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_logout_html', __('Custom logout HTML:', c_bid_text_domain), array(&$this, 'Option_logout_html'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_login_redir', __('Login redirection URL:', c_bid_text_domain), array(&$this, 'Option_login_redir'), 'browserid', 'plugin_main');
+			add_settings_field('browserid_comments', __('Enable for comments:', c_bid_text_domain), array(&$this, 'Option_comments'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_vserver', __('Verification server:', c_bid_text_domain), array(&$this, 'Option_vserver'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_novalid', __('Do not check valid until time:', c_bid_text_domain), array(&$this, 'Option_novalid'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_noverify', __('Do not verify SSL certificate:', c_bid_text_domain), array(&$this, 'Option_noverify'), 'browserid', 'plugin_main');
@@ -403,6 +436,13 @@ if (!class_exists('M66BrowserID')) {
 				$options['browserid_login_redir'] = null;
 			echo "<input id='browserid_login_redir' name='browserid_options[browserid_login_redir]' type='text' size='100' value='{$options['browserid_login_redir']}' />";
 			echo '<br />' . __('Default WordPress dashboard', c_bid_text_domain);
+		}
+
+		// Enable for comments
+		function Option_comments() {
+			$options = get_option('browserid_options');
+			$chk = (isset($options['browserid_comments']) && $options['browserid_comments'] ? " checked='checked'" : '');
+			echo "<input id='browserid_comments' name='browserid_options[browserid_comments]' type='checkbox'" . $chk. "/>";
 		}
 
 		// Verification server option
@@ -516,7 +556,6 @@ class BrowserID_Widget extends WP_Widget {
 
 	// Widget contents
 	function widget($args, $instance) {
-		echo M66BrowserID::Get_scripts(true);
 		echo M66BrowserID::Get_loginout_html();
 	}
 
@@ -553,7 +592,6 @@ if (empty($m66browserid)) {
 // Template tag "browserid_loginout"
 if (!function_exists('browserid_loginout')) {
 	function browserid_loginout() {
-		echo M66BrowserID::Get_scripts(true);
 		echo M66BrowserID::Get_loginout_html();
 	}
 }
