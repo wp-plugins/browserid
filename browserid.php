@@ -498,6 +498,7 @@ if (!class_exists('M66BrowserID')) {
 			$options = get_option('browserid_options');
 			$chk = (isset($options['browserid_comments']) && $options['browserid_comments'] ? " checked='checked'" : '');
 			echo "<input id='browserid_comments' name='browserid_options[browserid_comments]' type='checkbox'" . $chk. "/>";
+			echo '<strong>Beta!</strong>';
 		}
 
 		// Enable bbPress integration
@@ -505,6 +506,8 @@ if (!class_exists('M66BrowserID')) {
 			$options = get_option('browserid_options');
 			$chk = (isset($options['browserid_bbpress']) && $options['browserid_bbpress'] ? " checked='checked'" : '');
 			echo "<input id='browserid_bbpress' name='browserid_options[browserid_bbpress]' type='checkbox'" . $chk. "/>";
+			echo '<strong>Beta!</strong>';
+			echo '<br />' . __('Enables anonymous posting implicitly', c_bid_text_domain);
 		}
 
 		// Verification server option
