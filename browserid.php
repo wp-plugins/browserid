@@ -65,6 +65,15 @@ if (!class_exists('M66BrowserID')) {
 			}
 			if (isset($options['browserid_comments']) && $options['browserid_comments'])
 				add_action('comment_form', array(&$this, 'Comment_form'));
+			if (isset($options['browserid_bbpress']) && $options['browserid_bbpress']) {
+				//add_action('bbp_current_user_can_publish_topics', create_function('', 'return true;'));
+				//add_action('bbp_current_user_can_publish_replies', create_function('', 'return true;'));
+				add_action('bbp_allow_anonymous', array(&$this, 'bbPress_anonymous'));
+				add_action('bbp_is_anonymous', array(&$this, 'bbPress_anonymous'));
+				//add_action('bbp_template_notices', array(&$this, 'bbPress_notice'));
+				add_action('bbp_theme_before_topic_form_submit_button', array(&$this, 'bbPress_submit'));
+				add_action('bbp_theme_before_reply_form_submit_button', array(&$this, 'bbPress_submit'));
+			}
 
 			// Shortcode
 			add_shortcode('browserid_loginout', array(&$this, 'Shortcode_loginout'));
@@ -181,29 +190,37 @@ if (!class_exists('M66BrowserID')) {
 						{
 							// Succeeded
 							if (self::Is_comment()) {
-								// Add author name
-								if (empty($_POST['author'])) {
-									// Existing user?
-									$userdata = get_user_by('email', $result['email']);
-									if ($userdata)
-										$_POST['author'] = $userdata->display_name;
+								// Check if WordPress user
+								$userdata = get_user_by('email', $result['email']);
+								if ($userdata) {
+									$author = $userdata->display_name;
+									$url = $userdata->user_url;
+								}
+								else {
+									// Check if Gravatar profile
+									$hash = md5($result['email']);
+									$response = wp_remote_get('http://www.gravatar.com/' . $hash . '.json');
+									if (is_wp_error($response)) {
+										// Use first part of e-mail
+										$email = explode('@', $result['email']);
+										$author = $email[0];
+										$url = null;
+									}
 									else {
-										// Gravatar profile?
-										$hash = md5($result['email']);
-										$response = wp_remote_get('http://www.gravatar.com/' . $hash . '.json');
-										if (is_wp_error($response)) {
-											// Based on e-mail
-											$email = explode('@', $result['email']);
-											$_POST['author'] = $email[0];
-										}
-										else {
-											$json = json_decode($response['body']);
-											$_POST['author'] = $json->entry[0]->displayName;
-										}
+										// Use Gravatar display name
+										$json = json_decode($response['body']);
+										$author = $json->entry[0]->displayName;
+										$url = $json->entry[0]->profileUrl;
 									}
 								}
-								// Add author e-mail
+
+								// Update post variables
+								$_POST['author'] = $author;
 								$_POST['email'] = $result['email'];
+								$_POST['url'] = $url;
+								$_POST['bbp_anonymous_name'] = $author;
+								$_POST['bbp_anonymous_email'] = $result['email'];
+								$_POST['bbp_anonymous_website'] = $url;
 							}
 							else {
 								// Login
@@ -273,7 +290,8 @@ if (!class_exists('M66BrowserID')) {
 			wp_enqueue_script('browserid_login', plugins_url('login.js', __FILE__), array('browserid'));
 
 			// Prepare BrowserID for comments
-			if (isset($options['browserid_comments']) && $options['browserid_comments']) {
+			if ((isset($options['browserid_comments']) && $options['browserid_comments']) ||
+				(isset($options['browserid_bbpress']) && $options['browserid_bbpress'])) {
 				wp_enqueue_script('jquery');
 				wp_enqueue_script('browserid_comments', plugins_url('comments.js', __FILE__), array('jquery', 'browserid'));
 			}
@@ -340,18 +358,38 @@ if (!class_exists('M66BrowserID')) {
 			echo '<p>' . self::Get_loginout_html(false) . '<br /><br /></p>';
 		}
 
+		// bbPress integration
+		function bbPress_submit() {
+			$id = bbp_get_topic_id();
+			if (empty($id))
+				$id = bbp_get_forum_id();
+			self::Comment_form($id);
+		}
+
+		function bbPress_anonymous() {
+			return !is_user_logged_in();
+		}
+
+		function bbPress_notice() {
+			if (!is_user_logged_in()) {
+				echo '<div class="bbp-template-notice"><p>';
+				echo __('If you don\'t use BrowserID, you need to register/login to reply', c_bid_text_domain);
+				echo '</p></div>';
+			}
+		}
+
 		// Add BrowserID to comment form
 		function Comment_form($post_id) {
 			if (!is_user_logged_in()) {
 				// Get link content
 				$options = get_option('browserid_options');
 				if (empty($options['browserid_login_html']))
-					$html = '<img src="https://browserid.org/i/sign_in_blue.png" style="border: 0;" />';
+					$html = self::Get_default_img();
 				else
 					$html = $options['browserid_login_html'];
 
 				// Render link
-				echo '<a href="#" id="browserid_' . $post_id . '" onclick="return browserid_comment(' . $post_id . ');" title="BrowserID">' . $html . '</a>';
+				echo '<a href="#" id="browserid_' . $post_id . '" onclick="return browserid_comment(' . $post_id . ');" title="BrowserID" class="browserid">' . $html . '</a>';
 
 				// Display error message
 				if (isset($_REQUEST['browserid_error'])) {
@@ -387,12 +425,16 @@ if (!class_exists('M66BrowserID')) {
 			else {
 				// User not logged in
 				if (empty($options['browserid_login_html']))
-					$html = '<img src="https://browserid.org/i/sign_in_blue.png" style="border: 0;" />';
+					$html = self::Get_default_img();
 				else
 					$html = $options['browserid_login_html'];
 				// Button
-				return '<a href="#" onclick="return browserid_login();"  title="BrowserID">' . $html . '</a>';
+				return '<a href="#" onclick="return browserid_login();"  title="BrowserID" class="browserid">' . $html . '</a>';
 			}
+		}
+
+		function Get_default_img() {
+			return '<img src="https://browserid.org/i/sign_in_blue.png" style="border: 0; vertical-align: middle;" />';
 		}
 
 		// Register options page
@@ -414,6 +456,7 @@ if (!class_exists('M66BrowserID')) {
 			add_settings_field('browserid_logout_html', __('Custom logout HTML:', c_bid_text_domain), array(&$this, 'Option_logout_html'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_login_redir', __('Login redirection URL:', c_bid_text_domain), array(&$this, 'Option_login_redir'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_comments', __('Enable for comments:', c_bid_text_domain), array(&$this, 'Option_comments'), 'browserid', 'plugin_main');
+			add_settings_field('browserid_bbpress', __('Enable bbPress integration:', c_bid_text_domain), array(&$this, 'Option_bbpress'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_vserver', __('Verification server:', c_bid_text_domain), array(&$this, 'Option_vserver'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_novalid', __('Do not check valid until time:', c_bid_text_domain), array(&$this, 'Option_novalid'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_noverify', __('Do not verify SSL certificate:', c_bid_text_domain), array(&$this, 'Option_noverify'), 'browserid', 'plugin_main');
@@ -455,6 +498,13 @@ if (!class_exists('M66BrowserID')) {
 			$options = get_option('browserid_options');
 			$chk = (isset($options['browserid_comments']) && $options['browserid_comments'] ? " checked='checked'" : '');
 			echo "<input id='browserid_comments' name='browserid_options[browserid_comments]' type='checkbox'" . $chk. "/>";
+		}
+
+		// Enable bbPress integration
+		function Option_bbpress() {
+			$options = get_option('browserid_options');
+			$chk = (isset($options['browserid_bbpress']) && $options['browserid_bbpress'] ? " checked='checked'" : '');
+			echo "<input id='browserid_bbpress' name='browserid_options[browserid_bbpress]' type='checkbox'" . $chk. "/>";
 		}
 
 		// Verification server option
