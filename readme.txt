@@ -111,6 +111,7 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 * Improvement: added 'What is?' link
 * Improvement: more debug info
 * Updated Dutch and Flemish translations
+* Updated Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
 
 Follow these steps to install the development version:
 
