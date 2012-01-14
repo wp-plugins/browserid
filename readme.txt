@@ -18,7 +18,7 @@ There is also a widget, shortcode and template tag. It is possible to customize 
 **Beta features:**
 
 * Submit comments with BrowserID
-* [bbPress](http://bbpress.org/ "bbPress") integration: create topics / reply with BrowserID
+* [bbPress 2](http://bbpress.org/ "bbPress") integration: create topics / reply with BrowserID
 
 [BrowserID](https://browserid.org/ "BrowserID") is an open source experiment from the [Identity Team](http://identity.mozilla.com/ "Identity Team") at [Mozilla Labs](https://mozillalabs.com/ "Mozilla Labs").
 
