@@ -1,10 +1,10 @@
-=== BrowserID ===
+=== Mozilla BrowserID ===
 Contributors: Marcel Bokhorst, M66B
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB7DGNA3MJ&lc=US&item_name=BrowserID%20WordPress%20plugin&item_number=Marcel%20Bokhorst&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
-Tags: security, admin, authentication, access, widget, login, shortcode
+Tags: security, admin, authentication, access, widget, login, shortcode, comment, comments, discussion, bbPress
 Requires at least: 3.1
 Tested up to: 3.3.1
-Stable tag: 0.25
+Stable tag: 0.26
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -18,7 +18,7 @@ There is also a widget, shortcode and template tag. It is possible to customize 
 **Beta features:**
 
 * Submit comments with BrowserID
-* bbPress integration: create topics / reply with BrowserID
+* [bbPress](http://bbpress.org/ "bbPress") integration: create topics / reply with BrowserID
 
 [BrowserID](https://browserid.org/ "BrowserID") is an open source experiment from the [Identity Team](http://identity.mozilla.com/ "Identity Team") at [Mozilla Labs](https://mozillalabs.com/ "Mozilla Labs").
 
@@ -104,14 +104,7 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 == Changelog ==
 
 = Development version =
-* New feature: BrowserID for comments (beta, option)
-* New feature: bbPress integration (beta)
-* Improvement: added title/class to BrowserID buttons
-* Improvement: files instead of inline JavaScript script
-* Improvement: added 'What is?' link
-* Improvement: more debug info
-* Updated Dutch and Flemish translations
-* Updated Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
+* ...
 
 Follow these steps to install the development version:
 
@@ -123,6 +116,16 @@ Follow these steps to install the development version:
 * Click *Upload* (a link at the top)
 * Click *Choose file* and select the file you downloaded before
 * Click *Install*, then *Activate Plugin*
+
+= 0.26 =
+* New feature: BrowserID for comments (beta, option)
+* New feature: bbPress integration (beta, option)
+* Improvement: added title/class to BrowserID buttons
+* Improvement: files instead of inline JavaScript script
+* Improvement: added 'What is?' link
+* Improvement: more debug info
+* Updated Dutch and Flemish translations
+* Updated Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
 
 = 0.25 =
 * Improvement: store debug info only when debugging enabled
@@ -226,6 +229,9 @@ Follow these steps to install the development version:
 * Development version
 
 == Upgrade Notice ==
+
+= 0.26 =
+Two new features, four improvements, translation updates
 
 = 0.25 =
 Four improvements

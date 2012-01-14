@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: BrowserID
+Plugin Name: Mozilla BrowserID
 Plugin URI: http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/
-Description: BrowserID provides a safer and easier way to sign in
-Version: 0.25
+Description: Mozilla BrowserID provides a safer and easier way to sign in
+Version: 0.26
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
@@ -46,14 +46,16 @@ if (!class_exists('M66BrowserID')) {
 
 		// Constructor
 		function __construct() {
-			// Debug mode
+			// Get plugin options
 			$options = get_option('browserid_options');
+
+			// Debug mode
 			$this->debug = (isset($options['browserid_debug']) && $options['browserid_debug']);
 
 			// Register de-activation
 			register_deactivation_hook(__FILE__, array(&$this, 'Deactivate'));
 
-			// Register actions
+			// Register actions & filters
 			add_action('init', array(&$this, 'Init'), 0);
 			add_action('wp_head', array(&$this, 'WP_head'));
 			add_action('login_head', array(&$this, 'Login_head'));
@@ -64,14 +66,15 @@ if (!class_exists('M66BrowserID')) {
 				add_action('admin_menu', array(&$this, 'Admin_menu'));
 				add_action('admin_init', array(&$this, 'Admin_init'));
 			}
+
+			// Comment integration
 			if (isset($options['browserid_comments']) && $options['browserid_comments'])
 				add_action('comment_form', array(&$this, 'Comment_form'));
+
+			// bbPress integration
 			if (isset($options['browserid_bbpress']) && $options['browserid_bbpress']) {
-				//add_action('bbp_current_user_can_publish_topics', create_function('', 'return true;'));
-				//add_action('bbp_current_user_can_publish_replies', create_function('', 'return true;'));
-				add_action('bbp_allow_anonymous', array(&$this, 'bbPress_anonymous'));
-				add_action('bbp_is_anonymous', array(&$this, 'bbPress_anonymous'));
-				//add_action('bbp_template_notices', array(&$this, 'bbPress_notice'));
+				add_action('bbp_allow_anonymous', create_function('', 'return !is_user_logged_in();'));
+				add_action('bbp_is_anonymous', create_function('', 'return !is_user_logged_in();'));
 				add_action('bbp_theme_before_topic_form_submit_button', array(&$this, 'bbPress_submit'));
 				add_action('bbp_theme_before_reply_form_submit_button', array(&$this, 'bbPress_submit'));
 			}
@@ -102,6 +105,23 @@ if (!class_exists('M66BrowserID')) {
 			// I18n
 			load_plugin_textdomain(c_bid_text_domain, false, dirname(plugin_basename(__FILE__)));
 
+			// Check for assertion
+			self::Check_assertion();
+
+			// Enqueue BrowserID scripts
+			wp_enqueue_script('browserid', 'https://browserid.org/include.js');
+			wp_enqueue_script('browserid_login', plugins_url('login.js', __FILE__), array('browserid'));
+
+			// Prepare for comments and bbPress
+			$options = get_option('browserid_options');
+			if ((isset($options['browserid_comments']) && $options['browserid_comments']) ||
+				(isset($options['browserid_bbpress']) && $options['browserid_bbpress'])) {
+				wp_enqueue_script('jquery');
+				wp_enqueue_script('browserid_comments', plugins_url('comments.js', __FILE__), array('jquery', 'browserid'));
+			}
+		}
+
+		function Check_assertion() {
 			// Get options
 			$options = get_option('browserid_options');
 
@@ -186,74 +206,18 @@ if (!class_exists('M66BrowserID')) {
 						else
 							self::Handle_error($message);
 					}
-					else if ($result['status'] == 'okay' && $result['audience'] == $audience && $result['issuer'] == parse_url($vserver, PHP_URL_HOST)) {
-						// Check expire time
+					else if ($result['status'] == 'okay' &&
+							$result['audience'] == $audience &&
+							$result['issuer'] == parse_url($vserver, PHP_URL_HOST)) {
+						// Check expiry time
 						$novalid = (isset($options['browserid_novalid']) && $options['browserid_novalid']);
 						if ($novalid || time() < $result['expires'] / 1000)
 						{
 							// Succeeded
-							if (self::Is_comment()) {
-								// Check if WordPress user
-								$userdata = get_user_by('email', $result['email']);
-								if ($userdata) {
-									$author = $userdata->display_name;
-									$url = $userdata->user_url;
-								}
-								else {
-									// Check if Gravatar profile
-									$hash = md5($result['email']);
-									$response = wp_remote_get('http://www.gravatar.com/' . $hash . '.json');
-									if (is_wp_error($response)) {
-										// Use first part of e-mail
-										$email = explode('@', $result['email']);
-										$author = $email[0];
-										$url = null;
-									}
-									else {
-										// Use Gravatar display name
-										$json = json_decode($response['body']);
-										$author = $json->entry[0]->displayName;
-										$url = $json->entry[0]->profileUrl;
-									}
-								}
-
-								// Update post variables
-								$_POST['author'] = $author;
-								$_POST['email'] = $result['email'];
-								$_POST['url'] = $url;
-								$_POST['bbp_anonymous_name'] = $author;
-								$_POST['bbp_anonymous_email'] = $result['email'];
-								$_POST['bbp_anonymous_website'] = $url;
-							}
-							else {
-								// Login
-								$user = self::Login_by_email($result['email'], $rememberme);
-								if ($user) {
-									// Beam me up, Scotty!
-									if (isset($options['browserid_login_redir']) && $options['browserid_login_redir'])
-										$redirect_to = $options['browserid_login_redir'];
-									else if (isset($_REQUEST['redirect_to']))
-										$redirect_to = $_REQUEST['redirect_to'];
-									else
-										$redirect_to = admin_url();
-									$redirect_to = apply_filters('login_redirect', $redirect_to, '', $user);
-									wp_redirect($redirect_to);
-									exit();
-								}
-								else {
-									// User not found?
-									$message = __('Login failed', c_bid_text_domain);
-									$message .= ' (' . $result['email'] . ')';
-									if ($this->debug) {
-										header('Content-type: text/plain');
-										echo $message . PHP_EOL;
-										print_r($result);
-										exit();
-									}
-									else
-										self::Handle_error($message);
-								}
-							}
+							if (self::Is_comment())
+								self::Handle_comment($result);
+							else
+								self::Handle_login($result);
 						}
 						else {
 							$message = __('Verification invalid', c_bid_text_domain);
@@ -287,16 +251,58 @@ if (!class_exists('M66BrowserID')) {
 					}
 				}
 			}
+		}
 
-			// Enqueue BrowserID scripts
-			wp_enqueue_script('browserid', 'https://browserid.org/include.js');
-			wp_enqueue_script('browserid_login', plugins_url('login.js', __FILE__), array('browserid'));
-
-			// Prepare BrowserID for comments
+		// Determine if login or comment
+		function Is_comment() {
+			$options = get_option('browserid_options');
 			if ((isset($options['browserid_comments']) && $options['browserid_comments']) ||
-				(isset($options['browserid_bbpress']) && $options['browserid_bbpress'])) {
-				wp_enqueue_script('jquery');
-				wp_enqueue_script('browserid_comments', plugins_url('comments.js', __FILE__), array('jquery', 'browserid'));
+				(isset($options['browserid_bbpress']) && $options['browserid_bbpress']))
+				return (isset($_REQUEST['browserid_comment']) ? $_REQUEST['browserid_comment'] : null);
+			else
+				return null;
+		}
+
+		// Generic error handling
+		function Handle_error($message) {
+			$post_id = self::Is_comment();
+			$redirect = isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : null;
+			$url = ($post_id ? get_permalink($post_id) : wp_login_url($redirect));
+			$url .= (strpos($url, '?') === false ? '?' : '&') . 'browserid_error=' . urlencode($message);
+			if ($post_id)
+				$url .= '#browserid_' . $post_id;
+			wp_redirect($url);
+			exit();
+		}
+
+		// Process login
+		function Handle_login($result) {
+			// Login
+			$user = self::Login_by_email($result['email'], $rememberme);
+			if ($user) {
+				// Beam me up, Scotty!
+				if (isset($options['browserid_login_redir']) && $options['browserid_login_redir'])
+					$redirect_to = $options['browserid_login_redir'];
+				else if (isset($_REQUEST['redirect_to']))
+					$redirect_to = $_REQUEST['redirect_to'];
+				else
+					$redirect_to = admin_url();
+				$redirect_to = apply_filters('login_redirect', $redirect_to, '', $user);
+				wp_redirect($redirect_to);
+				exit();
+			}
+			else {
+				// User not found?
+				$message = __('Login failed', c_bid_text_domain);
+				$message .= ' (' . $result['email'] . ')';
+				if ($this->debug) {
+					header('Content-type: text/plain');
+					echo $message . PHP_EOL;
+					print_r($result);
+					exit();
+				}
+				else
+					self::Handle_error($message);
 			}
 		}
 
@@ -315,37 +321,58 @@ if (!class_exists('M66BrowserID')) {
 			return $user;
 		}
 
-		// Determine if login or comment
-		function Is_comment() {
-			return (isset($_REQUEST['browserid_comment']) ? $_REQUEST['browserid_comment'] : null);
-		}
+		// Process comment
+		function Handle_comment($result) {
+			// Initialize
+			$email = $result['email'];
+			$author = '';
+			$url = '';
 
-		// Generic error handling
-		function Handle_error($message) {
-			$post_id = self::Is_comment();
-			$redirect = isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : null;
-			$url = ($post_id ? get_permalink($post_id) : wp_login_url($redirect));
-			$url .= (strpos($url, '?') === false ? '?' : '&') . 'browserid_error=' . urlencode($message);
-			if ($post_id)
-				$url .= '#browserid_' . $post_id;
-			wp_redirect($url);
-			exit();
+			// Check WordPress user
+			$userdata = get_user_by('email', $email);
+			if ($userdata) {
+				$author = $userdata->display_name;
+				$url = $userdata->user_url;
+			}
+			else {
+				// Check Gravatar profile
+				$response = wp_remote_get('http://www.gravatar.com/' . md5($email) . '.json');
+				if (!is_wp_error($response)) {
+					$json = json_decode($response['body']);
+					$author = $json->entry[0]->displayName;
+					$url = $json->entry[0]->profileUrl;
+				}
+			}
+			if (empty($author)) {
+				// Use first part of e-mail
+				$parts = explode('@', $email);
+				$author = $parts[0];
+			}
+
+			// Update post variables
+			$_POST['author'] = $author;
+			$_POST['email'] = $email;
+			$_POST['url'] = $url;
+			// bbPress
+			$_POST['bbp_anonymous_name'] = $author;
+			$_POST['bbp_anonymous_email'] = $email;
+			$_POST['bbp_anonymous_website'] = $url;
 		}
 
 		// i18n comments
 		function WP_head() {
 			echo '<script type="text/javascript">' . PHP_EOL;
-			echo 'var browserid_failed="' . __('Verification failed', c_bid_text_domain) . '";' . PHP_EOL;
+			echo '  var browserid_failed="' . __('Verification failed', c_bid_text_domain) . '";' . PHP_EOL;
 			echo '</script>' . PHP_EOL;
 		}
 
 		// i18n login
 		function Login_head() {
 			echo '<script type="text/javascript">' . PHP_EOL;
-			echo 'var browserid_siteurl="' . get_site_url(null, '/') . '";' . PHP_EOL;
-			echo 'var browserid_redirect=';
+			echo '  var browserid_siteurl="' . get_site_url(null, '/') . '";' . PHP_EOL;
+			echo '  var browserid_redirect=';
 			echo (isset($_REQUEST['redirect_to']) ? '"' . urlencode($_REQUEST['redirect_to']) . '"' : 'null') . ';' . PHP_EOL;
-			echo 'var browserid_failed="' . __('Verification failed', c_bid_text_domain) . '";' . PHP_EOL;
+			echo '  var browserid_failed="' . __('Verification failed', c_bid_text_domain) . '";' . PHP_EOL;
 			echo '</script>' . PHP_EOL;
 		}
 
@@ -369,16 +396,9 @@ if (!class_exists('M66BrowserID')) {
 			self::Comment_form($id);
 		}
 
+		// Imply anonymous commenting
 		function bbPress_anonymous() {
 			return !is_user_logged_in();
-		}
-
-		function bbPress_notice() {
-			if (!is_user_logged_in()) {
-				echo '<div class="bbp-template-notice"><p>';
-				echo __('If you don\'t use BrowserID, you need to register/login to reply', c_bid_text_domain);
-				echo '</p></div>';
-			}
 		}
 
 		// Add BrowserID to comment form
@@ -386,10 +406,10 @@ if (!class_exists('M66BrowserID')) {
 			if (!is_user_logged_in()) {
 				// Get link content
 				$options = get_option('browserid_options');
-				if (empty($options['browserid_login_html']))
-					$html = self::Get_default_img();
+				if (empty($options['browserid_comment_html']))
+					$html = '<img src="https://browserid.org/i/browserid_logo_sm.png" style="border: 1px solid black; vertical-align: middle; margin-right: 5px;" />';
 				else
-					$html = $options['browserid_login_html'];
+					$html = $options['browserid_comment_html'];
 
 				// Render link
 				echo '<a href="#" id="browserid_' . $post_id . '" onclick="return browserid_comment(' . $post_id . ');" title="BrowserID" class="browserid">' . $html . '</a>';
@@ -429,7 +449,7 @@ if (!class_exists('M66BrowserID')) {
 			else {
 				// User not logged in
 				if (empty($options['browserid_login_html']))
-					$html = self::Get_default_img();
+					$html = '<img src="https://browserid.org/i/sign_in_blue.png" style="border: 0;" />';
 				else
 					$html = $options['browserid_login_html'];
 				// Button
@@ -437,10 +457,6 @@ if (!class_exists('M66BrowserID')) {
 				$html .= '<br />' . self::What_is();
 				return $html;
 			}
-		}
-
-		function Get_default_img() {
-			return '<img src="https://browserid.org/i/sign_in_blue.png" style="border: 0; vertical-align: middle;" />';
 		}
 
 		function What_is() {
@@ -467,6 +483,7 @@ if (!class_exists('M66BrowserID')) {
 			add_settings_field('browserid_login_redir', __('Login redirection URL:', c_bid_text_domain), array(&$this, 'Option_login_redir'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_comments', __('Enable for comments:', c_bid_text_domain), array(&$this, 'Option_comments'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_bbpress', __('Enable bbPress integration:', c_bid_text_domain), array(&$this, 'Option_bbpress'), 'browserid', 'plugin_main');
+			add_settings_field('browserid_comment_html', __('Custom comment HTML:', c_bid_text_domain), array(&$this, 'Option_comment_html'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_vserver', __('Verification server:', c_bid_text_domain), array(&$this, 'Option_vserver'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_novalid', __('Do not check valid until time:', c_bid_text_domain), array(&$this, 'Option_novalid'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_noverify', __('Do not verify SSL certificate:', c_bid_text_domain), array(&$this, 'Option_noverify'), 'browserid', 'plugin_main');
@@ -503,7 +520,7 @@ if (!class_exists('M66BrowserID')) {
 			echo '<br />' . __('Default WordPress dashboard', c_bid_text_domain);
 		}
 
-		// Enable for comments
+		// Enable comments integration
 		function Option_comments() {
 			$options = get_option('browserid_options');
 			$chk = (isset($options['browserid_comments']) && $options['browserid_comments'] ? " checked='checked'" : '');
@@ -518,6 +535,14 @@ if (!class_exists('M66BrowserID')) {
 			echo "<input id='browserid_bbpress' name='browserid_options[browserid_bbpress]' type='checkbox'" . $chk. "/>";
 			echo '<strong>Beta!</strong>';
 			echo '<br />' . __('Enables anonymous posting implicitly', c_bid_text_domain);
+		}
+
+		// Comment HTML option
+		function Option_comment_html() {
+			$options = get_option('browserid_options');
+			if (empty($options['browserid_comment_html']))
+				$options['browserid_comment_html'] = null;
+			echo "<input id='browserid_comment_html' name='browserid_options[browserid_comment_html]' type='text' size='100' value='{$options['browserid_comment_html']}' />";
 		}
 
 		// Verification server option
@@ -557,19 +582,19 @@ if (!class_exists('M66BrowserID')) {
 		function Administration() {
 ?>
 			<div class="wrap">
-			<h2><?php _e('BrowserID', c_bid_text_domain); ?></h2>
-			<form method="post" action="options.php">
-			<?php settings_fields('browserid_options'); ?>
-			<?php do_settings_sections('browserid'); ?>
-			<p class="submit">
-			<input type="submit" class="button-primary" value="<?php _e('Save Changes') ?>" />
-			</p>
-			</form>
-			<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
-			<input type="hidden" name="cmd" value="_s-xclick">
-			<input type="hidden" name="encrypted" value="-----BEGIN PKCS7-----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-----END PKCS7-----">
-			<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
-			</form>
+				<h2><?php _e('BrowserID', c_bid_text_domain); ?></h2>
+				<form method="post" action="options.php">
+					<?php settings_fields('browserid_options'); ?>
+					<?php do_settings_sections('browserid'); ?>
+					<p class="submit">
+						<input type="submit" class="button-primary" value="<?php _e('Save Changes') ?>" />
+					</p>
+				</form>
+				<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+					<input type="hidden" name="cmd" value="_s-xclick">
+					<input type="hidden" name="encrypted" value="-----BEGIN PKCS7-----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-----END PKCS7-----">
+					<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+				</form>
 			</div>
 <?php
 			if ($this->debug) {
@@ -630,7 +655,9 @@ if (!class_exists('M66BrowserID')) {
 	}
 }
 
+// Define widget
 class BrowserID_Widget extends WP_Widget {
+	// Widget constructor
 	function BrowserID_Widget() {
 		$widget_ops = array(
 			'classname' => 'browserid_widget',
