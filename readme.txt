@@ -1,10 +1,10 @@
-=== BrowserID ===
+=== Mozilla BrowserID ===
 Contributors: Marcel Bokhorst, M66B
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB7DGNA3MJ&lc=US&item_name=BrowserID%20WordPress%20plugin&item_number=Marcel%20Bokhorst&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
-Tags: security, admin, authentication, access, widget, login, shortcode
+Tags: security, admin, authentication, access, widget, login, shortcode, comment, comments, discussion, bbPress
 Requires at least: 3.1
-Tested up to: 3.3
-Stable tag: 0.24
+Tested up to: 3.3.1
+Stable tag: 0.26
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -15,6 +15,11 @@ Implementation of Mozilla BrowserID for WordPress
 This plugin adds a BrowserID login button as an additional way to login to your login page.
 There is also a widget, shortcode and template tag. It is possible to customize the login and logout button/link.
 
+**Beta features:**
+
+* Submit comments with BrowserID
+* [bbPress](http://bbpress.org/ "bbPress") integration: create topics / reply with BrowserID
+
 [BrowserID](https://browserid.org/ "BrowserID") is an open source experiment from the [Identity Team](http://identity.mozilla.com/ "Identity Team") at [Mozilla Labs](https://mozillalabs.com/ "Mozilla Labs").
 
 **BrowserID and this plugin are experimental !**
@@ -22,7 +27,7 @@ There is also a widget, shortcode and template tag. It is possible to customize 
 Please report any issue you have with this plugin on the [support page](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/ "Marcel's weblog"), so I can at least try to fix it.
 If you rate this plugin low, please [let me know why](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/#respond "Marcel's weblog").
 
-See my [other plugins](http://wordpress.org/extend/plugins/profile/m66b "Marcel Bokhorst").
+See my [other plugins](http://wordpress.org/extend/plugins/profile/m66b "Marcel Bokhorst")
 
 == Installation ==
 
@@ -98,8 +103,36 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 
 == Changelog ==
 
-= Next release =
-* Development version is [here](http://wordpress.org/extend/plugins/browserid/download/ "Development version")
+= Development version =
+* ...
+
+Follow these steps to install the development version:
+
+* Download the development version by clicking on [this link](http://downloads.wordpress.org/plugin/browserid.zip)
+* Go to *Plugins* on your WordPress dashboard
+* *Deactivate* BrowserID
+* *Delete* BrowserID (*Yes, delete these files*)
+* Click *Add New*
+* Click *Upload* (a link at the top)
+* Click *Choose file* and select the file you downloaded before
+* Click *Install*, then *Activate Plugin*
+
+= 0.26 =
+* New feature: BrowserID for comments (beta, option)
+* New feature: bbPress integration (beta, option)
+* Improvement: added title/class to BrowserID buttons
+* Improvement: files instead of inline JavaScript script
+* Improvement: added 'What is?' link
+* Improvement: more debug info
+* Updated Dutch and Flemish translations
+* Updated Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
+
+= 0.25 =
+* Improvement: store debug info only when debugging enabled
+* Improvement: add trailing slash to site URL
+* Improvement: respect login redirect to parameter
+* Improvement: better error messages
+* Thanks to [mitcho](http://mitcho.com "mitcho") for the suggestions and testing!
 
 = 0.24 =
 * Removed [Sustainable Plugins Sponsorship Network](http://pluginsponsors.com/)
@@ -196,6 +229,12 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 * Development version
 
 == Upgrade Notice ==
+
+= 0.26 =
+Two new features, four improvements, translation updates
+
+= 0.25 =
+Four improvements
 
 = 0.24 =
 Compliance
