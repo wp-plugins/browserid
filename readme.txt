@@ -104,7 +104,7 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 == Changelog ==
 
 = Development version =
-* ...
+* Bugfix: remember me
 
 Follow these steps to install the development version:
 
