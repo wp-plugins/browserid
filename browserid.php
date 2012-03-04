@@ -217,7 +217,7 @@ if (!class_exists('M66BrowserID')) {
 							if (self::Is_comment())
 								self::Handle_comment($result);
 							else
-								self::Handle_login($result);
+								self::Handle_login($result, $rememberme);
 						}
 						else {
 							$message = __('Verification invalid', c_bid_text_domain);
@@ -276,7 +276,7 @@ if (!class_exists('M66BrowserID')) {
 		}
 
 		// Process login
-		function Handle_login($result) {
+		function Handle_login($result, $rememberme) {
 			// Login
 			$user = self::Login_by_email($result['email'], $rememberme);
 			if ($user) {
