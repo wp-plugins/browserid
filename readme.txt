@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB
 Tags: security, admin, authentication, access, widget, login, shortcode, comment, comments, discussion, bbPress, bbPress 2.0
 Requires at least: 3.1
 Tested up to: 3.3.1
-Stable tag: 0.26
+Stable tag: 0.27
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -24,8 +24,8 @@ There is also a widget, shortcode and template tag. It is possible to customize 
 
 **BrowserID and this plugin are experimental !**
 
-Please report any issue you have with this plugin on the [support page](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/ "Marcel's weblog"), so I can at least try to fix it.
-If you rate this plugin low, please [let me know why](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/#respond "Marcel's weblog").
+Please report any issue you have with this plugin on the [forum](http://forum.bokhorst.biz/), so I can at least try to fix it.
+If you rate this plugin low, please let me know why.
 
 See my [other plugins](http://wordpress.org/extend/plugins/profile/m66b "Marcel Bokhorst")
 
@@ -93,7 +93,7 @@ You could check the option *Do not check valid until time* to solve this.
 
 = Where can I ask questions, report bugs and request features? =
 
-You can write comments on the [support page](http://blog.bokhorst.biz/5379/computers-en-internet/wordpress-plugin-browserid/ "Marcel's weblog").
+You can write comments on the [forum](http://forum.bokhorst.biz/).
 
 == Screenshots ==
 
@@ -104,7 +104,7 @@ You can write comments on the [support page](http://blog.bokhorst.biz/5379/compu
 == Changelog ==
 
 = Development version =
-* Bugfix: remember me
+* ...
 
 Follow these steps to install the development version:
 
@@ -116,6 +116,9 @@ Follow these steps to install the development version:
 * Click *Upload* (a link at the top)
 * Click *Choose file* and select the file you downloaded before
 * Click *Install*, then *Activate Plugin*
+
+= 0.27 =
+* Bugfix: remember me
 
 = 0.26 =
 * New feature: BrowserID for comments (beta, option)
@@ -229,6 +232,9 @@ Follow these steps to install the development version:
 * Development version
 
 == Upgrade Notice ==
+
+= 0.27 =
+One bugfix
 
 = 0.26 =
 Two new features, four improvements, translation updates
