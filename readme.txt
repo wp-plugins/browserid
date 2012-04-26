@@ -3,7 +3,7 @@ Contributors: Marcel Bokhorst, M66B
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB7DGNA3MJ&lc=US&item_name=BrowserID%20WordPress%20plugin&item_number=Marcel%20Bokhorst&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
 Tags: security, admin, authentication, access, widget, login, shortcode, comment, comments, discussion, bbPress, bbPress 2.0
 Requires at least: 3.1
-Tested up to: 3.3.1
+Tested up to: 3.3.2
 Stable tag: 0.27
 
 Implementation of Mozilla BrowserID for WordPress
@@ -104,7 +104,7 @@ You can write comments on the [forum](http://forum.bokhorst.biz/).
 == Changelog ==
 
 = Development version =
-* Improvement: post assertion (thanks marv51)
+* Improvement: POST assertion (thanks marv51)
 
 Follow these steps to install the development version:
 
