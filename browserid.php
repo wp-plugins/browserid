@@ -122,15 +122,15 @@ if (!class_exists('M66BrowserID')) {
 		}
 
 		function Check_assertion() {
-			// Get options
-			$options = get_option('browserid_options');
-
 			// Workaround for Microsoft IIS bug
 			if (isset($_REQUEST['?browserid_assertion']))
 				$_REQUEST['browserid_assertion'] = $_REQUEST['?browserid_assertion'];
 
 			// Verify received assertion
 			if (isset($_REQUEST['browserid_assertion'])) {
+				// Get options
+				$options = get_option('browserid_options');
+
 				// Get assertion/audience/remember me
 				$assertion = $_REQUEST['browserid_assertion'];
 				$audience = $_SERVER['HTTP_HOST'];
