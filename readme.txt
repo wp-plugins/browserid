@@ -105,6 +105,7 @@ You can write comments on the [forum](http://forum.bokhorst.biz/).
 
 = Development version =
 * Improvement: POST assertion (thanks marv51)
+* Improvement: bundling CA certificates
 
 Follow these steps to install the development version:
 

@@ -66,6 +66,7 @@ if (!class_exists('M66BrowserID')) {
 				add_action('admin_menu', array(&$this, 'Admin_menu'));
 				add_action('admin_init', array(&$this, 'Admin_init'));
 			}
+			add_action('http_api_curl', array(&$this, 'http_api_curl'));
 
 			// Comment integration
 			if (isset($options['browserid_comments']) && $options['browserid_comments'])
@@ -629,6 +630,10 @@ if (!class_exists('M66BrowserID')) {
 				delete_option(c_bid_option_request);
 				delete_option(c_bid_option_response);
 			}
+		}
+
+		function http_api_curl($handle) {
+			curl_setopt ($handle, CURLOPT_CAINFO, dirname(__FILE__) . '/cacert.pem' );
 		}
 
 		// Check environment
