@@ -633,7 +633,7 @@ if (!class_exists('M66BrowserID')) {
 		}
 
 		function http_api_curl($handle) {
-			curl_setopt ($handle, CURLOPT_CAINFO, dirname(__FILE__) . '/cacert.pem' );
+			curl_setopt($handle, CURLOPT_CAINFO, dirname(__FILE__) . '/cacert.pem');
 		}
 
 		// Check environment
