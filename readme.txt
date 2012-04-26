@@ -104,7 +104,7 @@ You can write comments on the [forum](http://forum.bokhorst.biz/).
 == Changelog ==
 
 = Development version =
-* ...
+* Improvement: post assertion (thanks marv51)
 
 Follow these steps to install the development version:
 
