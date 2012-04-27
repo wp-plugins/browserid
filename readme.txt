@@ -104,8 +104,9 @@ You can write comments on the [forum](http://forum.bokhorst.biz/).
 == Changelog ==
 
 = Development version =
-* Improvement: POST assertion (thanks marv51)
+* Improvement: POST assertion by *Marvin Rühe*
 * Improvement: bundling Firefox CA certificates
+* Added German Translation by *Marvin Rühe*
 
 Follow these steps to install the development version:
 
