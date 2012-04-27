@@ -105,7 +105,9 @@ You can write comments on the [forum](http://forum.bokhorst.biz/).
 
 = Development version =
 * Improvement: POST assertion by *Marvin Rühe*
-* Improvement: bundling Firefox CA certificates
+* Improvement: included Firefox CA certificates
+* Improvement: included BrowserID logo
+* New feature: login button localization
 * Added German Translation by *Marvin Rühe*
 
 Follow these steps to install the development version:
