@@ -462,8 +462,10 @@ if (!class_exists('M66BrowserID')) {
 
 		function Get_image_url() {
 			$image_url = plugins_url('browserid-en_US.png', __FILE__);
-			if (defined('WPLANG')) {
-				$image = 'browserid-' . WPLANG . '.png';
+			$locale = get_bloginfo('language');
+			$locale = str_replace('-', '_', $locale);
+			if (!empty($locale)) {
+				$image = 'browserid-' . $locale . '.png';
 				$image_file = dirname(__FILE__) . '/' . $image;
 				if (file_exists($image_file))
 					$image_url = plugins_url($image, __FILE__);
