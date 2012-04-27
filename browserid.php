@@ -408,7 +408,7 @@ if (!class_exists('M66BrowserID')) {
 				// Get link content
 				$options = get_option('browserid_options');
 				if (empty($options['browserid_comment_html']))
-					$html = '<img src="https://browserid.org/i/browserid_logo_sm.png" style="border: 1px solid black; vertical-align: middle; margin-right: 5px;" />';
+					$html = '<img src="' . plugins_url('/browserid-logo.png', __FILE__) . '" style="border: 1px solid black; vertical-align: middle; margin-right: 5px;" />';
 				else
 					$html = $options['browserid_comment_html'];
 
@@ -450,7 +450,7 @@ if (!class_exists('M66BrowserID')) {
 			else {
 				// User not logged in
 				if (empty($options['browserid_login_html']))
-					$html = '<img src="https://browserid.org/i/sign_in_blue.png" style="border: 0;" />';
+					$html = '<img src="' . self::Get_image_url() . '" style="border: 0;" />';
 				else
 					$html = $options['browserid_login_html'];
 				// Button
@@ -458,6 +458,17 @@ if (!class_exists('M66BrowserID')) {
 				$html .= '<br />' . self::What_is();
 				return $html;
 			}
+		}
+
+		function Get_image_url() {
+			$image_url = plugins_url('browserid-en_US.png', __FILE__);
+			if (defined('WPLANG')) {
+				$image = 'browserid-' . WPLANG . '.png';
+				$image_file = dirname(__FILE__) . '/' . $image;
+				if (file_exists($image_file))
+					$image_url = plugins_url($image, __FILE__);
+			}
+			return $image_url;
 		}
 
 		function What_is() {
