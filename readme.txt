@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB
 Tags: security, admin, authentication, access, widget, login, shortcode, comment, comments, discussion, bbPress, bbPress 2.0
 Requires at least: 3.1
 Tested up to: 3.3.2
-Stable tag: 0.27
+Stable tag: 0.28
 
 Implementation of Mozilla BrowserID for WordPress
 
@@ -104,11 +104,7 @@ You can write comments on the [forum](http://forum.bokhorst.biz/).
 == Changelog ==
 
 = Development version =
-* Improvement: POST assertion by *Marvin Rühe*
-* Improvement: included Firefox CA certificates
-* Improvement: included BrowserID logo
-* New feature: login button localization
-* Added German Translation by *Marvin Rühe*
+* ...
 
 Follow these steps to install the development version:
 
@@ -120,6 +116,13 @@ Follow these steps to install the development version:
 * Click *Upload* (a link at the top)
 * Click *Choose file* and select the file you downloaded before
 * Click *Install*, then *Activate Plugin*
+
+= 0.28 =
+* Improvement: POST assertion by *Marvin Rühe*
+* Improvement: included Firefox CA certificates
+* Improvement: included BrowserID logo
+* New feature: login button localization
+* Added German Translation by *Marvin Rühe*
 
 = 0.27 =
 * Bugfix: remember me
@@ -236,6 +239,9 @@ Follow these steps to install the development version:
 * Development version
 
 == Upgrade Notice ==
+
+= 0.28 =
+One new feature, threee improvements
 
 = 0.27 =
 One bugfix
