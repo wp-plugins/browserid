@@ -104,7 +104,7 @@ You can write comments on the [forum](http://forum.bokhorst.biz/).
 == Changelog ==
 
 = Development version =
-* ...
+* Added Swedish (sv\_SE) translation
 
 Follow these steps to install the development version:
 
