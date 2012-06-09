@@ -57,8 +57,6 @@ if (!class_exists('M66BrowserID')) {
 
 			// Register actions & filters
 			add_action('init', array(&$this, 'Init'), 0);
-			add_action('wp_head', array(&$this, 'WP_head'));
-			add_action('login_head', array(&$this, 'Login_head'));
 			add_filter('login_message', array(&$this, 'Login_message'));
 			add_action('login_form', array(&$this, 'Login_form'));
 			add_action('widgets_init', create_function('', 'return register_widget("BrowserID_Widget");'));
@@ -110,15 +108,16 @@ if (!class_exists('M66BrowserID')) {
 			self::Check_assertion();
 
 			// Enqueue BrowserID scripts
-			wp_enqueue_script('browserid', 'https://browserid.org/include.js');
-			wp_enqueue_script('browserid_login', plugins_url('login.js', __FILE__), array('browserid'));
+			wp_register_script('browserid', 'https://browserid.org/include.js', array(), '', true);
+			wp_register_script('browserid_login', plugins_url('login.js', __FILE__), array('browserid'), '', true);
 
 			// Prepare for comments and bbPress
 			$options = get_option('browserid_options');
 			if ((isset($options['browserid_comments']) && $options['browserid_comments']) ||
 				(isset($options['browserid_bbpress']) && $options['browserid_bbpress'])) {
-				wp_enqueue_script('jquery');
-				wp_enqueue_script('browserid_comments', plugins_url('comments.js', __FILE__), array('jquery', 'browserid'));
+				wp_enqueue_script('browserid_comments', plugins_url('comments.js', __FILE__), array('jquery', 'browserid'), '', true);
+				$data_array = array('browserid_failed' => __('Verification failed', c_bid_text_domain));
+				wp_localize_script('browserid_comments', 'browserid_comments', $data_array);
 			}
 		}
 
@@ -360,22 +359,7 @@ if (!class_exists('M66BrowserID')) {
 			$_POST['bbp_anonymous_website'] = $url;
 		}
 
-		// i18n comments
-		function WP_head() {
-			echo '<script type="text/javascript">' . PHP_EOL;
-			echo '  var browserid_failed="' . __('Verification failed', c_bid_text_domain) . '";' . PHP_EOL;
-			echo '</script>' . PHP_EOL;
-		}
 
-		// i18n login
-		function Login_head() {
-			echo '<script type="text/javascript">' . PHP_EOL;
-			echo '  var browserid_siteurl="' . get_site_url(null, '/') . '";' . PHP_EOL;
-			echo '  var browserid_redirect=';
-			echo (isset($_REQUEST['redirect_to']) ? '"' . urlencode($_REQUEST['redirect_to']) . '"' : 'null') . ';' . PHP_EOL;
-			echo '  var browserid_failed="' . __('Verification failed', c_bid_text_domain) . '";' . PHP_EOL;
-			echo '</script>' . PHP_EOL;
-		}
 
 		// Filter login error message
 		function Login_message($message) {
@@ -433,6 +417,13 @@ if (!class_exists('M66BrowserID')) {
 		// Build HTML for login/out button/link
 		function Get_loginout_html($check_login = true) {
 			// Get options
+			wp_enqueue_script('browserid_login');
+			$redirect = (isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : null);
+			$data_array = array(
+				'browserid_siteurl' => get_site_url(null, '/'),
+				'browserid_redirect' => $redirect,
+				'browserid_failed' => __('Verification failed', c_bid_text_domain));
+			wp_localize_script( 'browserid_login', 'browserid_text', $data_array );
 			$options = get_option('browserid_options');
 
 			if ($check_login && is_user_logged_in()) {

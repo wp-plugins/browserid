@@ -7,7 +7,7 @@ function browserid_comment(post_id) {
 			form.find('[type=submit]').click();
 		}
 		else
-			alert('Verification failed');
+			alert(browserid_comments.browserid_failed);
 	});
 	return false;
 }

@@ -105,6 +105,7 @@ You can write comments on the [forum](http://forum.bokhorst.biz/).
 
 = Development version =
 * Added Swedish (sv\_SE) translation
+* Improvement: load scripts at footer by *Marvin*
 
 Follow these steps to install the development version:
 
