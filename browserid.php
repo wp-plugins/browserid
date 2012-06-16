@@ -3,7 +3,7 @@
 Plugin Name: Mozilla BrowserID
 Plugin URI: http://wordpress.org/extend/plugins/browserid/
 Description: Mozilla BrowserID provides a safer and easier way to sign in
-Version: 0.28
+Version: 0.29
 Author: Marcel Bokhorst
 Author URI: http://blog.bokhorst.biz/about/
 */
