@@ -1,0 +1,77 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: Marcel Bokhorst\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=iso-8859-1\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Verification void"
+msgstr "V&eacute;rification vide"
+
+msgid "Login failed"
+msgstr "&Eacute;chec de connexion"
+
+msgid "Verification failed"
+msgstr "&Eacute;chec de v&eacute;rification"
+
+msgid "Verification invalid"
+msgstr "V&eacute;rification invalide"
+
+msgid "BrowserID"
+msgstr "Persona"
+
+msgid "Administration"
+msgstr "Administration"
+
+msgid "Logout"
+msgstr "Se d&eacute;connecter"
+
+msgid "Custom login HTML:"
+msgstr "HTML de connexion&nbsp;:"
+
+msgid "Custom logout HTML:"
+msgstr "HTML de d&eacute;connexion&nbsp;:"
+
+msgid "Login redirection URL:"
+msgstr "URL de redirection apr&egrave;s connexion&nbsp;:"
+
+msgid "Default WordPress dashboard"
+msgstr "Panneau WordPress standard"
+
+msgid "Enable for comments:"
+msgstr "Activer pour les commentaires&nbsp;:"
+
+msgid "Enable bbPress integration:"
+msgstr "Activer l'int&eacute;gration bbPress&nbsp;:"
+
+msgid "Enables anonymous posting implicitly"
+msgstr "Active implicitement les commentaires anonymes"
+
+msgid "Custom comment HTML:"
+msgstr "HTML pour commenter&nbsp;:"
+
+msgid "Verification server:"
+msgstr "Serveur de v&eacute;rification&nbsp;:"
+
+msgid "Default https://login.persona.org/verify"
+msgstr "D&eacute;faut https://login.persona.org/verify"
+
+msgid "Do not check valid until time:"
+msgstr "Ne pas v&eacute;rifier la date limite de validit&eacute;&nbsp;:"
+
+msgid "Do not verify SSL certificate:"
+msgstr "Ne pas v&eacute;rifier le certificat SSL&nbsp;:"
+
+msgid "Security risk!"
+msgstr "Risque de s&eacute;curit&eacute; !"
+
+msgid "What is BrowserID?"
+msgstr "Qu'est-ce que Persona ?"
+
+msgid "Debug mode:"
+msgstr "Mode debug&nbsp;:"
+

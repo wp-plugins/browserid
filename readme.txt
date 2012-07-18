@@ -121,6 +121,7 @@ Follow these steps to install the development version:
 * Renamed Mozilla BrowserID into Mozilla Persona
 * New feature: site name/logo in login dialog
 * Both by [Shane Tomlinson](https://shanetomlinson.com/), thanks!
+* Added French translation
 * Updated Dutch and Flemish translations
 * Tested with WordPress 3.4.1
 
