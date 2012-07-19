@@ -10,68 +10,68 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid "Verification void"
-msgstr "&Uuml;berpr&uuml;fung ung&uuml;ltig"
+msgstr "V&eacute;rification vide"
 
 msgid "Login failed"
-msgstr "Anmeldung fehlgeschlagen"
+msgstr "&Eacute;chec de connexion"
 
 msgid "Verification failed"
-msgstr "&Uuml;berpr&uuml;fung fehlgeschlagen"
+msgstr "&Eacute;chec de v&eacute;rification"
 
 msgid "Verification invalid"
-msgstr "&Uuml;berpr&uuml;fung ung&uuml;ltig"
+msgstr "V&eacute;rification invalide"
 
 msgid "BrowserID"
-msgstr "BrowserID"
+msgstr "Persona"
 
 msgid "Administration"
 msgstr "Administration"
 
 msgid "Logout"
-msgstr "Abmelden"
+msgstr "Se d&eacute;connecter"
 
 msgid "Custom login HTML:"
-msgstr "Benutzerdefiniertes Anmelde HTML:"
+msgstr "HTML de connexion&nbsp;:"
 
 msgid "Custom logout HTML:"
-msgstr "Benutzerdefiniertes Abmelde HTML:"
+msgstr "HTML de d&eacute;connexion&nbsp;:"
 
 msgid "Login redirection URL:"
-msgstr "Anmeldeweiterleitungs URL:"
+msgstr "URL de redirection apr&egrave;s connexion&nbsp;:"
 
 msgid "Default WordPress dashboard"
-msgstr "Standard WordPress Dashboard"
+msgstr "Panneau WordPress standard"
 
 msgid "Enable for comments:"
-msgstr "F&uuml;r Kommentare aktivierenr:"
+msgstr "Activer pour les commentaires&nbsp;:"
 
 msgid "Enable bbPress integration:"
-msgstr "F&uuml;r bbPress aktivieren:"
+msgstr "Activer l'int&eacute;gration bbPress&nbsp;:"
 
 msgid "Enables anonymous posting implicitly"
-msgstr "Indirekt anonymes Kommentieren erlauben"
+msgstr "Active implicitement les commentaires anonymes"
 
 msgid "Custom comment HTML:"
-msgstr "Benutzerdefiniertes Kommentar HTML:"
+msgstr "HTML pour commenter&nbsp;:"
 
 msgid "Verification server:"
-msgstr "Best&auml;tigungs Server:"
+msgstr "Serveur de v&eacute;rification&nbsp;:"
 
 msgid "Default https://login.persona.org/verify"
-msgstr "Standard https://login.persona.org/verify"
+msgstr "D&eacute;faut https://login.persona.org/verify"
 
 msgid "Do not check valid until time:"
-msgstr "Nicht kontrollieren Ablaufzeit:"
+msgstr "Ne pas v&eacute;rifier la date limite de validit&eacute;&nbsp;:"
 
 msgid "Do not verify SSL certificate:"
-msgstr "SSL Zertifikat nicht &uuml;berpr&uuml;fen:"
+msgstr "Ne pas v&eacute;rifier le certificat SSL&nbsp;:"
 
 msgid "Security risk!"
-msgstr "Sicherheitsrisiko!"
+msgstr "Risque de s&eacute;curit&eacute; !"
 
 msgid "What is BrowserID?"
-msgstr "Was ist BrowserID?"
+msgstr "Qu'est-ce que Persona ?"
 
 msgid "Debug mode:"
-msgstr "Debug Modus:"
+msgstr "Mode debug&nbsp;:"
 
