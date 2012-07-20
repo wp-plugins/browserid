@@ -119,6 +119,7 @@ Follow these steps to install the development version:
 
 = 0.32 =
 * Fixed notices
+* Updated French translation
 
 = 0.31 =
 * Renamed Mozilla BrowserID into Mozilla Persona
