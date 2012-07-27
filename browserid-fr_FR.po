@@ -114,8 +114,8 @@ msgid "Enables anonymous posting implicitly"
 msgstr "Active implicitement les commentaires anonymes"
 
 #: browserid.php:608
-msgid "Default https://login.persona.org/verify"
-msgstr "Défaut https://login.persona.org/verify"
+msgid "Default https://verifier.login.persona.org/verify"
+msgstr "Défaut https://verifier.login.persona.org/verify"
 
 #: browserid.php:616
 #: browserid.php:624
