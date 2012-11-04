@@ -104,7 +104,7 @@ You can write comments on the [forum](http://forum.bokhorst.biz/).
 == Changelog ==
 
 = Development version =
-* Added Italian translation
+* Added Italian translation by *John R. D'Orazio*
 
 Follow these steps to install the development version:
 
