@@ -1,28 +1,28 @@
-=== Mozilla BrowserID ===
+=== Mozilla Persona (BrowserID) ===
 Contributors: Marcel Bokhorst, M66B
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=AJSBB7DGNA3MJ&lc=US&item_name=BrowserID%20WordPress%20plugin&item_number=Marcel%20Bokhorst&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted
 Tags: security, admin, authentication, access, widget, login, shortcode, comment, comments, discussion, bbPress, bbPress 2.0
 Requires at least: 3.1
-Tested up to: 3.3.2
-Stable tag: 0.28
+Tested up to: 3.5.1
+Stable tag: 0.36
 
-Implementation of Mozilla BrowserID for WordPress
+Implementation of Mozilla Persona (BrowserID) for WordPress
 
 == Description ==
 
-"*As a user of BrowserID, you confirm your email addresses once. Then, you can sign into any web site that supports BrowserID with just two clicks.*"
+"*As a user of Mozilla Persona (BrowserID), you confirm your email addresses once. Then, you can sign into any web site that supports Mozilla Persona with just two clicks.*"
 
-This plugin adds a BrowserID login button as an additional way to login to your login page.
+This plugin adds a Mozilla Persona login button as an additional way to login to your login page.
 There is also a widget, shortcode and template tag. It is possible to customize the login and logout button/link.
 
 **Beta features:**
 
-* Submit comments with BrowserID
-* [bbPress 2](http://bbpress.org/ "bbPress") integration: create topics / reply with BrowserID
+* Submit comments with Mozilla Persona
+* [bbPress 2](http://bbpress.org/ "bbPress") integration: create topics / reply with Mozilla Persona
 
-[BrowserID](https://browserid.org/ "BrowserID") is an open source experiment from the [Identity Team](http://identity.mozilla.com/ "Identity Team") at [Mozilla Labs](https://mozillalabs.com/ "Mozilla Labs").
+[Mozilla Persona](https://login.persona.org/ "Mozilla Persona") is an open source experiment from the [Identity Team](http://identity.mozilla.com/ "Identity Team") at [Mozilla Labs](https://mozillalabs.com/ "Mozilla Labs").
 
-**BrowserID and this plugin are experimental !**
+**Mozilla Persona and this plugin are experimental !**
 
 Please report any issue you have with this plugin on the [forum](http://forum.bokhorst.biz/), so I can at least try to fix it.
 If you rate this plugin low, please let me know why.
@@ -36,7 +36,7 @@ See my [other plugins](http://wordpress.org/extend/plugins/profile/m66b "Marcel 
 1. Login to your weblog
 1. Go to Plugins
 1. Select Add New
-1. Search for BrowserID
+1. Search for Mozilla Persona
 1. Select Install
 1. Select Install Now
 1. Select Activate Plugin
@@ -53,13 +53,13 @@ See my [other plugins](http://wordpress.org/extend/plugins/profile/m66b "Marcel 
 
 Try putting the following into this option:
 
-`<img src="https://browserid.org/i/browserid_logo_sm.png" />`
+`<img src="https://login.persona.org/i/browserid_logo_sm.png" />`
 
-Now you will see the BrowserID logo instead of the login button.
+Now you will see the Mozilla Persona logo instead of the login button.
 
 = Which server verifies the assertion? =
 
-The assertion is verified by the server at https://browserid.org/verify.
+The assertion is verified by the server at https://login.persona.org/verify.
 
 = I get 'SSL certificate problem, verify that the CA cert is OK' =
 
@@ -68,13 +68,13 @@ You can check the option *Do not verify SSL certificate*, but please realize thi
 
 = I get 'Bad Gateway' =
 
-The browserid.org service is still in testing phase.
+The login.persona.org service is still in testing phase.
 Trying again may help.
 
 = I get 'Login failed' =
 
 Only users that registered before can login.
-The e-mail address used for BrowserID should match the e-mail address registered with.
+The e-mail address used for Mozilla Persona should match the e-mail address registered with.
 
 = I get 'Verification failed' =
 
@@ -97,29 +97,59 @@ You can write comments on the [forum](http://forum.bokhorst.biz/).
 
 == Screenshots ==
 
-1. BrowserID logo
-1. BrowserID login button
+1. Mozilla Persona logo
+1. Mozilla Persona login button
 1. WordPress login dialog
 
 == Changelog ==
 
 = Development version =
-* Added Swedish (sv\_SE) translation
+* ...
 
 Follow these steps to install the development version:
 
 * Download the development version by clicking on [this link](http://downloads.wordpress.org/plugin/browserid.zip)
 * Go to *Plugins* on your WordPress dashboard
-* *Deactivate* BrowserID
-* *Delete* BrowserID (*Yes, delete these files*)
+* *Deactivate* Mozilla Persona
+* *Delete* Mozilla Persona (*Yes, delete these files*)
 * Click *Add New*
 * Click *Upload* (a link at the top)
 * Click *Choose file* and select the file you downloaded before
 * Click *Install*, then *Activate Plugin*
 
+= 0.36 =
+* Bgufix: *browserid_error*
+
+= 0.35 =
+* Bugfix: redirect option, thanks *Lwangaman*!
+
+= 0.34 =
+* Added Italian translation by [John R. D'Orazio](http://johnromanodorazio.blogspot.it/ "John R. D'Orazio")
+
+= 0.33 =
+* Updated URL to verification server
+* Updated Mozilla CA certificates
+
+= 0.32 =
+* Fixed notices
+* Updated French translation
+
+= 0.31 =
+* Renamed Mozilla BrowserID into Mozilla Persona
+* New feature: site name/logo in login dialog
+* Both by [Shane Tomlinson](https://shanetomlinson.com/), thanks!
+* Added French translation
+* Updated Dutch and Flemish translations
+* Tested with WordPress 3.4.1
+
+= 0.29 =
+* Added Swedish (sv\_SE) translation
+* Improvement: load scripts at footer by *Marvin Rühe*
+* Tested with WordPress 3.4
+
 = 0.28 =
 * Improvement: POST assertion by *Marvin Rühe*
-* Improvement: included Firefox CA certificates
+* Improvement: included Mozilla CA certificates
 * Improvement: included BrowserID logo
 * New feature: login button localization
 * Added German Translation by *Marvin Rühe*
@@ -192,8 +222,8 @@ Follow these steps to install the development version:
 * Fixed IDN
 
 = 0.9 =
-* New feature: shortcode for login/out button/link: *[browserid_loginout]*
-* New feature: template tag for login/out button/link: *browserid_loginout*
+* New feature: shortcode for login/out button/link: *[mozilla_persona]*
+* New feature: template tag for login/out button/link: *mozilla_persona*
 * Updated Dutch and Flemish translations
 * Updated Norwegian (nb\_NO) translation by [Stein Ivar Johnsen](http://www.idyrøy.no/ "Stein Ivar Johnsen")
 
@@ -239,6 +269,21 @@ Follow these steps to install the development version:
 * Development version
 
 == Upgrade Notice ==
+
+= 0.36 =
+One bugfix
+
+= 0.33 =
+Updated URL to verification server
+
+= 0.32 =
+Fixed notices
+
+= 0.31 =
+Renamed Mozilla BrowserID into Mozilla Persona
+
+= 0.29 =
+One improvement, one new translation
 
 = 0.28 =
 One new feature, threee improvements
@@ -322,4 +367,4 @@ First public release
 
 This plugin uses:
 
-* The client side [BrowserID script](https://browserid.org/include.js "BrowserID script")
+* The client side [Mozilla Persona script](https://login.persona.org/include.js "Mozilla Persona script")
