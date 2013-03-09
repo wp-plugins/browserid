@@ -10,6 +10,8 @@ Implementation of Mozilla Persona (BrowserID) for WordPress
 
 == Description ==
 
+**This plugin is no longer supported**
+
 "*As a user of Mozilla Persona (BrowserID), you confirm your email addresses once. Then, you can sign into any web site that supports Mozilla Persona with just two clicks.*"
 
 This plugin adds a Mozilla Persona login button as an additional way to login to your login page.
