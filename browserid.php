@@ -43,50 +43,63 @@ define('c_bid_option_response', 'bid_response');
 define('c_bid_browserid_login_cookie', 'bid_browserid_login_' . COOKIEHASH);
 
 // Define class
-if (!class_exists('M66BrowserID')) {
-	class M66BrowserID {
+if (!class_exists('MozillaBrowserID')) {
+	class MozillaBrowserID {
 		// Class variables
 		var $debug = null;
 
 		// Constructor
 		function __construct() {
-			// Get plugin options
-			$options = get_option('browserid_options');
-
-			// Debug mode
-			$this->debug = (isset($options['browserid_debug']) && $options['browserid_debug']);
-
 			// Register de-activation
 			register_deactivation_hook(__FILE__, array(&$this, 'Deactivate'));
 
 			// Register actions & filters
 			add_action('init', array(&$this, 'Init'), 0);
+
+
+			// Authentication
 			add_action('set_auth_cookie', array(&$this, 'Set_auth_cookie'));
 			add_action('clear_auth_cookie', array(&$this, 'Clear_auth_cookie'));
 			add_filter('wp_authenticate_user', array(&$this, 'Check_username_password_auth_allowed_allowed'));
 			add_filter('login_message', array(&$this, 'Login_message'));
 			add_action('login_form', array(&$this, 'Login_form'));
 
-			add_action('register_form', array(&$this, 'Register_form'));
-			add_action('user_register', array(&$this, 'Register_user_register_action'));
-			add_filter('registration_redirect', array(&$this, 'Register_redirect_filter'));
 
+			// Registration
+			if (self::Is_option_browserid_only_auth()) {
+				add_action('register_form', array(&$this, 'Register_form'));
+				add_action('user_register', array(&$this, 'Register_user_register_action'));
+				add_filter('registration_redirect', array(&$this, 'Register_redirect_filter'));
+			}
+
+
+			// Lost password
+			if (self::Is_option_browserid_only_auth()) {
+				add_action('lost_password', array(&$this, 'Lost_password_form'));
+				add_filter('allow_password_reset', array(&$this, 'Allow_password_reset_filter'));
+				add_filter('show_password_fields', array(&$this, 'Show_password_fields_filter'));
+			}
+
+			// Widgets and admin menu
 			add_action('widgets_init', create_function('', 'return register_widget("BrowserID_Widget");'));
 			if (is_admin()) {
 				add_action('admin_menu', array(&$this, 'Admin_menu'));
 				add_action('admin_init', array(&$this, 'Admin_init'));
 			}
+
+			// top toolbar logout button override
+			add_action('admin_bar_menu', array(&$this, 'Admin_toolbar'), 999);
+
 			add_action('http_api_curl', array(&$this, 'http_api_curl'));
-                        add_action('admin_bar_menu', array(&$this, 'Admin_toolbar'), 999);
 
 			// Comment integration
-			if (isset($options['browserid_comments']) && $options['browserid_comments']) {
+			if (self::Is_option_comments()) {
 				add_filter('comment_form_default_fields', array(&$this, 'Comment_form_fields'));
 				add_action('comment_form', array(&$this, 'Comment_form'));
 			}
 
 			// bbPress integration
-			if (isset($options['browserid_bbpress']) && $options['browserid_bbpress']) {
+			if (self::Is_option_bbpress()) {
 				add_action('bbp_allow_anonymous', create_function('', 'return !is_user_logged_in();'));
 				add_action('bbp_is_anonymous', create_function('', 'return !is_user_logged_in();'));
 				add_action('bbp_theme_before_topic_form_submit_button', array(&$this, 'bbPress_submit'));
@@ -124,21 +137,21 @@ if (!class_exists('M66BrowserID')) {
 			load_plugin_textdomain(c_bid_text_domain, false, dirname(plugin_basename(__FILE__)));
 
 			// Check for assertion
-			self::Check_assertion();
+			$assertion = self::Get_assertion();
+			if (!empty($assertion)) {
+				self::Check_assertion($assertion);
+			}
 
 			// Enqueue BrowserID scripts
 			wp_register_script('browserid', 'https://login.persona.org/include.js', array(), '', true);
 			// This one script takes care of all work.
 			wp_register_script('browserid_common', plugins_url('login.js', __FILE__), array('jquery', 'browserid'), '', true);
 
-			$redirect = (isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : null);
-			$browserid_error = (isset($_REQUEST['browserid_error']) ? $_REQUEST['browserid_error'] : null);
-			$browserid_failed = __('Verification failed', c_bid_text_domain);
 			$data_array = array(
 				'siteurl' => get_site_url(null, '/'),
-				'login_redirect' => $redirect,
-				'error' => $browserid_error,
-				'failed' => $browserid_failed,
+				'login_redirect' => self::Get_login_redirect_url(),
+				'error' => self::Get_error_message(),
+				'failed' => self::Get_verification_failed_message(),
 				'sitename' => self::Get_sitename(),
 				'sitelogo' => self::Get_sitelogo(),
 				'logout_redirect' => wp_logout_url(),
@@ -148,157 +161,194 @@ if (!class_exists('M66BrowserID')) {
 			wp_enqueue_script('browserid_common');
 		}
 
-		// Get the currently logged in user, iff they authenticated using BrowserID
-		function Get_browserid_loggedin_user() {
-		  global $user_email;
-		  get_currentuserinfo();
-
-		  if ( isset( $_COOKIE[c_bid_browserid_login_cookie] ) ) {
-			return $user_email;
-		  }
-
-		  return null;
+		// Get the redirect URL from the request
+		function Get_request_redirect_url() {
+			return (isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : null);
 		}
 
-		function Check_assertion() {
+		// Get the login redirect URL
+		function Get_login_redirect_url($new_user = false) {
+			// first, if a redirect is specified in the request, use that.
+			// second, if it is a new user and a new user redirect url is 
+			// specified, go there.
+			// third, if if the global login redirect  is specified, use that.
+			// forth, use the admin URL.
+
+			$newuser_redirect_url = self::Get_option_newuser_redir();
+			$option_redirect_url = self::Get_option_login_redir();
+			$request_redirect_url = self::Get_request_redirect_url(); 
+
+			if(!empty($request_redirect_url)) {
+				$redirect_to = $request_redirect_url;
+			} else if($new_user && !empty($newsuer_redirect_url)) {
+				$redirect_to = $newuser_redirect_url;
+			} else if(!empty($option_redirect_url)) {
+				$redirect_to = $option_redirect_url;
+			} else {
+				$redirect_to = admin_url();
+			}
+
+			return $redirect_to;
+		}
+
+
+		// Get the error message
+		function Get_error_message() {
+			return (isset($_REQUEST['browserid_error']) ? $_REQUEST['browserid_error'] : null);
+		}
+
+		// Get the verification failed message
+		function Get_verification_failed_message() {
+			return __('Verification failed', c_bid_text_domain);
+		}
+
+		// Get the currently logged in user, iff they authenticated 
+		// using BrowserID
+		function Get_browserid_loggedin_user() {
+			global $user_email;
+			get_currentuserinfo();
+
+			if ( isset( $_COOKIE[c_bid_browserid_login_cookie] ) ) {
+				return $user_email;
+			}
+
+			return null;
+		}
+
+		// Check if an assertion is received. If one has been, verify it and 
+		// log the user in. If not, continue.
+		function Check_assertion($assertion) {
+			// Verify assertion
+			$response = self::Post_assertion_to_verifier($assertion);
+
+			// Decode response. If the response is invalid, an error 
+			// message will be printed.
+			$result = self::Check_verifier_response($response);
+
+			if ($result) {
+				$email = $result['email'];
+				// Succeeded
+				if (self::Is_comment())
+					self::Handle_comment($email);
+				else if (self::Is_registration())
+					self::Handle_registration($email);
+				else
+					self::Handle_login($email, false);
+			}
+		}
+
+		// Get the audience
+		function Get_audience() {
+			return $_SERVER['HTTP_HOST'];
+		}
+
+		// Get an assertion from that request
+		function Get_assertion() {
 			// Workaround for Microsoft IIS bug
 			if (isset($_REQUEST['?browserid_assertion']))
 				$_REQUEST['browserid_assertion'] = $_REQUEST['?browserid_assertion'];
 
-			// Verify received assertion
-			if (isset($_REQUEST['browserid_assertion'])) {
-				// Get options
-				$options = get_option('browserid_options');
+			return $_REQUEST['browserid_assertion'];
+		}
 
-				// Get assertion/audience/remember me
-				$assertion = $_REQUEST['browserid_assertion'];
-				$audience = $_SERVER['HTTP_HOST'];
+		function Get_rememberme() {
+			return (isset($_REQUEST['rememberme']) && $_REQUEST['rememberme'] == 'true');
+		}
 
-				$rememberme = (isset($_REQUEST['rememberme']) && $_REQUEST['rememberme'] == 'true');
+		// Post the assertion to the verifier. If the assertion does not 
+		// verify, an error message will be displayed and no more processing 
+		// will occur 
+		function Post_assertion_to_verifier($assertion) {
+			$audience = self::Get_audience();
 
-				// Get verification server URL
-				if (isset($options['browserid_vserver']) && $options['browserid_vserver'])
-					$vserver = $options['browserid_vserver'];
-				else
-					$vserver = 'https://verifier.login.persona.org/verify';
+			// Get verification server URL
+			$vserver = self::Get_option_vserver();
 
-				// No SSL verify?
-				$noverify = (isset($options['browserid_noverify']) && $options['browserid_noverify']);
+			// No SSL verify?
+			$noverify = self::Is_option_noverify();
 
-				// Build arguments
-				$args = array(
-					'method' => 'POST',
-					'timeout' => 30,
-					'redirection' => 0,
-					'httpversion' => '1.0',
-					'blocking' => true,
-					'headers' => array(),
-					'body' => array(
-						'assertion' => $assertion,
-						'audience' => $audience
-					),
-					'cookies' => array(),
-					'sslverify' => !$noverify
-				);
-				if ($this->debug)
-					update_option(c_bid_option_request, $vserver . ' ' . print_r($args, true));
+			// Build arguments
+			$args = array(
+				'method' => 'POST',
+				'timeout' => 30,
+				'redirection' => 0,
+				'httpversion' => '1.0',
+				'blocking' => true,
+				'headers' => array(),
+				'body' => array(
+					'assertion' => $assertion,
+					'audience' => $audience
+				),
+				'cookies' => array(),
+				'sslverify' => !$noverify
+			);
 
-				// Verify assertion
-				$response = wp_remote_post($vserver, $args);
+			if (self::Is_option_debug())
+				update_option(c_bid_option_request, $vserver . ' ' . print_r($args, true));
 
-				// Check result
-				if (is_wp_error($response)) {
-					// Debug info
-					$message = __($response->get_error_message());
-					if ($this->debug) {
-						update_option(c_bid_option_response, $response);
-						header('Content-type: text/plain');
-						echo $message . PHP_EOL;
-						print_r($response);
-						exit();
-					}
-					else
-						self::Handle_error($message);
+			// Verify assertion
+			$response = wp_remote_post($vserver, $args);
+
+			// If error, print the error message and exit.
+			if (is_wp_error($response)) {
+				// Debug info
+				$message = __($response->get_error_message());
+				if (self::Is_option_debug()) {
+					update_option(c_bid_option_response, $response);
 				}
-				else {
-					// Persist debug info
-					if ($this->debug) {
-						$response['vserver'] = $vserver;
-						$response['audience'] = $audience;
-						$response['rememberme'] = $rememberme;
-						update_option(c_bid_option_response, $response);
-					}
 
-					// Decode response
-					$result = json_decode($response['body'], true);
-
-					// Check result
-					if (empty($result) || empty($result['status'])) {
-						// No result or status
-						$message = __('Verification void', c_bid_text_domain);
-						if ($this->debug) {
-							header('Content-type: text/plain');
-							echo $message . PHP_EOL;
-							echo $response['response']['message'] . PHP_EOL;
-							print_r($response);
-							exit();
-						}
-						else
-							self::Handle_error($message);
-					}
-					else if ($result['status'] == 'okay' &&
-							$result['audience'] == $audience) {
-						// Check expiry time
-						$novalid = (isset($options['browserid_novalid']) && $options['browserid_novalid']);
-						if ($novalid || time() < $result['expires'] / 1000)
-						{
-							// Succeeded
-							if (self::Is_comment())
-								self::Handle_comment($result);
-							else if (self::Is_registration())
-								self::Handle_registration($result);
-							else
-								self::Handle_login($result, $rememberme);
-						}
-						else {
-							$message = __('Verification invalid', c_bid_text_domain);
-							if ($this->debug) {
-								header('Content-type: text/plain');
-								echo $message . PHP_EOL;
-								echo 'time=' . time() . PHP_EOL;
-								print_r($result);
-								exit();
-							}
-							else
-								self::Handle_error($message);
-						}
-					}
-					else {
-						// Failed
-						$message = __('Verification failed', c_bid_text_domain);
-						if (isset($result['reason']))
-							$message .= ': ' . __($result['reason'], c_bid_text_domain);
-						if ($this->debug) {
-							header('Content-type: text/plain');
-							echo $message . PHP_EOL;
-							echo 'audience=' . $audience . PHP_EOL;
-							echo 'vserver=' . parse_url($vserver, PHP_URL_HOST) . PHP_EOL;
-							echo 'time=' . time() . PHP_EOL;
-							print_r($result);
-							exit();
-						}
-						else
-							self::Handle_error($message);
-					}
-				}
+				self::Handle_error($message, $message, $response);
 			}
+
+			// Persist debug info
+			if (self::Is_option_debug()) {
+				$response['vserver'] = self::Get_option_vserver();
+				$response['audience'] = self::Get_audience();
+				$response['rememberme'] = self::Get_rememberme();
+				update_option(c_bid_option_response, $response);
+			}
+
+
+			return $response;
+		}
+
+		// Check result. If result is either invalid or indicates a bad 
+		// assertion, an error message will be printed and processing
+		// will stop. If verification succeeds, response will be returned.
+		function Check_verifier_response($response) {
+			$result = json_decode($response['body'], true);
+
+			if (empty($result) || empty($result['status'])) {
+				// No result or status
+				$message = __('Verification response invalid', c_bid_text_domain);
+
+				$debug_message = $message . PHP_EOL . $response['response']['message'];
+			}
+			else if ($result['status'] != 'okay') {
+				// Bad status
+				$message = __('Verification failed', c_bid_text_domain);
+				if (isset($result['reason']))
+					$message .= ': ' . __($result['reason'], c_bid_text_domain);
+
+				$debug_message = $message . PHP_EOL;
+			} 
+			else {
+				// Succeeded
+				return $result;
+			}
+
+			// Verification has failed, display erorr and stop processing.
+			$debug_message .= 'audience=' . self::Get_audience() . PHP_EOL;
+			$debug_message .= 'vserver=' . parse_url(self::Get_option_vserver(), PHP_URL_HOST) . PHP_EOL;
+			$debug_message .= 'time=' . time();
+
+			self::Handle_error($message, $debug_message, $result);
 		}
 
 		// Determine if login or comment
 		function Is_comment() {
 			$options = get_option('browserid_options');
-			if ((isset($options['browserid_comments']) && $options['browserid_comments']) ||
-				(isset($options['browserid_bbpress']) && $options['browserid_bbpress']))
+			if (self::Is_option_comments() || self::Is_option_bbpress()) 
 				return (isset($_REQUEST['browserid_comment']) ? $_REQUEST['browserid_comment'] : null);
 			else
 				return null;
@@ -310,73 +360,41 @@ if (!class_exists('M66BrowserID')) {
 		}
 
 		// Generic error handling
-		function Handle_error($message) {
-			$post_id = self::Is_comment();
-			$redirect = isset($_REQUEST['redirect_to']) ? $_REQUEST['redirect_to'] : null;
-			$url = ($post_id ? get_permalink($post_id) : wp_login_url($redirect));
-			$url .= (strpos($url, '?') === false ? '?' : '&') . 'browserid_error=' . urlencode($message);
-			if ($post_id)
-				$url .= '#browserid_' . $post_id;
-			wp_redirect($url);
+		function Handle_error($message, $debug_message, $result) {
+			if (self::Is_option_debug() && !empty($debug_message)) {
+				header('Content-type: text/plain');
+				echo $debug_message . PHP_EOL;
+
+				if (!empty($result)) {
+					print_r($result);
+				}
+			} else {
+				$post_id = self::Is_comment();
+				$redirect = self::Get_request_redirect_url();
+				$url = ($post_id ? get_permalink($post_id) : wp_login_url($redirect));
+				$url .= (strpos($url, '?') === false ? '?' : '&') . 'browserid_error=' . urlencode($message);
+				if ($post_id)
+					$url .= '#browserid_' . $post_id;
+				wp_redirect($url);
+			}
+
 			exit();
 		}
 
 		// Process login
-		function Handle_login($result, $rememberme) {
-			$options = get_option('browserid_options');
+		function Handle_login($email, $new_user) {
 			// Login
-			$user = self::Login_by_email($result['email'], $rememberme);
+			$user = self::Login_by_email($email, self::Get_rememberme());
 			if ($user) {
 				// Beam me up, Scotty!
-				if (isset($result['redirect_to'])) 
-					$redirect_to = $result['redirect_to'];
-				else if (isset($options['browserid_login_redir']) && $options['browserid_login_redir'])
-					$redirect_to = $options['browserid_login_redir'];
-				else if (isset($_REQUEST['redirect_to']))
-					$redirect_to = $_REQUEST['redirect_to'];
-				else
-					$redirect_to = admin_url();
+				$redirect_to = self::Get_login_redirect_url($new_user);
 				$redirect_to = apply_filters('login_redirect', $redirect_to, '', $user);
 				wp_redirect($redirect_to);
 				exit();
 			}
 			else {
-				// User not found? If auto-registration is 
-				// enabled, try to create a new user with the 
-				// email address as the username.
-				if ( !get_option('users_can_register') ) {
-					$message = __('You must already have an account to log in with Persona.');
-					self::Handle_error($message);
-					exit();
-				} else if( !isset($options['browserid_auto_create_new_users']) || !$options['browserid_auto_create_new_users']) {
-					$message = __('You must already have an account to log in with Persona.');
-
-					self::Handle_error($message);
-					exit();
-				} else {
-					$user_id = wp_create_user($result['email'], 'password', $result['email']);
-					
-					if ($user_id) {
-						if (isset($options['browserid_newuser_redir']) && $options['browserid_newuser_redir']) {
-							$result['redirect_to'] = $options['browserid_newuser_redir'];
-						} else {
-							$result['redirect_to'] = admin_url() . 'profile.php';
-						}
-						self::Handle_login($result, $rememberme);
-					} else {				
-						$message = __('New user creation failed', c_bid_text_domain);
-						$message .= ' (' . $result['email'] . ')';
-						if ($this->debug) {
-							header('Content-type: text/plain');
-							echo $message . PHP_EOL;
-							print_r($result);
-						}
-						else 
-							self::Handle_error($message);
-
-						exit();
-					}
-				}
+				$message = __('You must already have an account to log in with Persona.');
+				self::Handle_error($message);
 			}
 		}
 
@@ -386,11 +404,13 @@ if (!class_exists('M66BrowserID')) {
 			return self::Login_by_userdata($userdata, $rememberme);
 		}
 
-		function Login_by_id($user_id) {
+		// Login user using id
+		function Login_by_id($user_id, $rememberme) {
 			$userdata = get_user_by('id', $user_id);
-			return self::Login_by_userdata($userdata, true);
+			return self::Login_by_userdata($userdata, $rememberme);
 		}
 
+		// Login user by userdata
 		function Login_by_userdata($userdata, $rememberme) {
 			global $user;
 			$user = null;
@@ -406,9 +426,8 @@ if (!class_exists('M66BrowserID')) {
 		}
 
 		// Process comment
-		function Handle_comment($result) {
+		function Handle_comment($email) {
 			// Initialize
-			$email = $result['email'];
 			$author = $_REQUEST['author'];
 			$url = $_REQUEST['url'];
 
@@ -448,22 +467,25 @@ if (!class_exists('M66BrowserID')) {
 			$_POST['bbp_anonymous_website'] = $url;
 		}
 
-		// Set a cookie that keeps track whether the user signed in using BrowserID
+		// Set a cookie that keeps track whether the user signed in 
+		// using BrowserID
 		function Set_auth_cookie($auth_cookie, $expire, $expiration, $user_id, $scheme) {
-			// Persona should only manage Persona logins. If this is a BrowserID login, 
-			// keep track of it so that the user is not automatically logged out if 
-			// they log in via other means.
+			// Persona should only manage Persona logins. If this is 
+			// a Persona login, keep track of it so that the user is 
+			// not automatically logged out if they log in via other means.
 			if ($this->browserid_login) {
 				$secure = $scheme == "secure_auth";
 				setcookie(c_bid_browserid_login_cookie, 1, $expire, COOKIEPATH, COOKIE_DOMAIN, $secure, true);
 			}
 			else {
-				// If the user is not logged in via BrowserID, clear the cookie.
+				// If the user is not logged in via BrowserID, clear the 
+				// cookie.
 				self::Clear_auth_cookie();
 			}
 		}
 
-		// Clear the cookie that keeps track of whether hte user signed in using BrowserID
+		// Clear the cookie that keeps track of whether hte user 
+		// signed in using BrowserID
 		function Clear_auth_cookie() {
 			$expire = time() - YEAR_IN_SECONDS;
 			setcookie(c_bid_browserid_login_cookie, ' ', $expire, COOKIEPATH, COOKIE_DOMAIN);
@@ -471,7 +493,7 @@ if (!class_exists('M66BrowserID')) {
 
 		// Check whether normal username/password authentication is allowed
 		function Check_username_password_auth_allowed_allowed($user, $password) {
-			if (self::Is_browserid_only_auth()) {
+			if (self::Is_option_browserid_only_auth()) {
 				return new WP_error('invalid_login', 'Only BrowserID logins are allowed');
 			}
 
@@ -490,20 +512,12 @@ if (!class_exists('M66BrowserID')) {
 			echo '<p>' . self::Get_loginout_html(false) . '<br /><br /></p>';
 		}
 
-		// Does the site have browserid only authentication enabled.
-		function Is_browserid_only_auth() {
-			$options = get_option('browserid_options');
-
-			return ((isset($options['browserid_only_auth']) && 
-						$options['browserid_only_auth']));
-		}
-
 		// Add Persona button to registration form and remove the email form.
 		function Register_form() {
 			// Only enable registration via Persona if Persona is the only 
 			// authentication mechanism or else the user will not see the
 			// "check your email" screen.
-			if (self::Is_browserid_only_auth()) {
+			if (self::Is_option_browserid_only_auth()) {
 				echo '<input type="hidden" name="browserid_assertion" id="browserid_assertion" />';
 
 				// XXX collapse the link stuff into Get_login_html
@@ -518,30 +532,54 @@ if (!class_exists('M66BrowserID')) {
 
 		// Process registration - get the email address from the assertion and 
 		// process the rest of the form.
-		function Handle_registration($result) {
-			if (self::Is_browserid_only_auth()) {
-				$_POST['user_email'] = $result['email'];
+		function Handle_registration($email) {
+			if (self::Is_option_browserid_only_auth()) {
+				$_POST['user_email'] = $email;
 			}
 		}
 
 
 		// Now that the user is registered, log them in
 		function Register_user_register_action($user_id) {
-			if (self::Is_browserid_only_auth()) {
-				self::Login_by_id($user_id);
+			if (self::Is_option_browserid_only_auth()) {
+				self::Login_by_id($user_id, false);
 			}
 		}
 
 		function Register_redirect_filter($redirect_to) {
 			if ($redirect_to) return $redirect_to;
 
-			if (self::Is_browserid_only_auth()) {
+			if (self::Is_option_browserid_only_auth()) {
 				// The user successfully signed up using Persona, 
 				// send them to their profile page
 				return admin_url() . 'profile.php';
 			}
 
 			return '';
+		}
+
+		// If only BrowserID logins are allowed, a reset password form should 
+		// not be shown.
+		function Lost_password_form() {
+			if (self::Is_option_browserid_only_auth()) {
+				// The blogname option is escaped with esc_html on the way into the database in sanitize_option
+				// we want to reverse this for the plain text arena of emails.
+				$blogname = wp_specialchars_decode(get_option('blogname'), ENT_QUOTES);
+				login_header(__('Password reset disabled'), '<p 
+				class="message">' . sprintf(__('%s uses Mozilla Persona to sign in and does not use passwords. Password reset is disabled.'), $blogname) . "</p>");
+				login_footer('user_login');
+				exit();
+			}
+		}
+
+		// Disable reset password if in BrowserID only mode
+		function Allow_password_reset_filter() {
+			return !self::Is_option_browserid_only_auth();
+		}
+
+		// Disable change password form if in BrowserID only mode
+		function Show_password_fields_filter() {
+			return !self::Is_option_browserid_only_auth();
 		}
 
 
@@ -560,8 +598,7 @@ if (!class_exists('M66BrowserID')) {
 
 		// Get rid of the email field in the comment form
 		function Comment_form_fields($fields) {
-			$options = get_option('browserid_options');
-			if ((isset($options['browserid_comments']) && $options['browserid_comments'])) {
+			if (self::Is_option_comments()) {
 				unset($fields['email']);
 			}
 			return $fields;
@@ -635,7 +672,7 @@ if (!class_exists('M66BrowserID')) {
 				// Hide the login form. While this does not truely prevent users from 
 				// from logging in using the standard authentication mechanism, it 
 				// cleans up the login form a bit.
-				if (self::Is_browserid_only_auth()) {
+				if (self::Is_option_browserid_only_auth()) {
 					$html .= '<style>#user_login, [for=user_login], #user_pass, [for=user_pass], [name=log], [name=pwd] { display: none; }</style>'; 
 				}
 
@@ -723,7 +760,6 @@ if (!class_exists('M66BrowserID')) {
 			add_settings_field('browserid_only_auth', __('Disable non-Persona logins:', c_bid_text_domain), array(&$this, 'Option_browserid_only_auth'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_login_html', __('Custom login HTML:', c_bid_text_domain), array(&$this, 'Option_login_html'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_logout_html', __('Custom logout HTML:', c_bid_text_domain), array(&$this, 'Option_logout_html'), 'browserid', 'plugin_main');
-			add_settings_field('browserid_auto_create_new_users', __('Automatically create new users with the email address as the username', c_bid_text_domain), array(&$this, 'Option_auto_create_new_users'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_newuser_redir', __('New user redirection URL:', c_bid_text_domain), array(&$this, 'Option_newuser_redir'), 'browserid', 'plugin_main');
 
 			add_settings_field('browserid_login_redir', __('Login redirection URL:', c_bid_text_domain), array(&$this, 'Option_login_redir'), 'browserid', 'plugin_main');
@@ -731,7 +767,6 @@ if (!class_exists('M66BrowserID')) {
 			add_settings_field('browserid_bbpress', __('Enable bbPress integration:', c_bid_text_domain), array(&$this, 'Option_bbpress'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_comment_html', __('Custom comment HTML:', c_bid_text_domain), array(&$this, 'Option_comment_html'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_vserver', __('Verification server:', c_bid_text_domain), array(&$this, 'Option_vserver'), 'browserid', 'plugin_main');
-			add_settings_field('browserid_novalid', __('Do not check valid until time:', c_bid_text_domain), array(&$this, 'Option_novalid'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_noverify', __('Do not verify SSL certificate:', c_bid_text_domain), array(&$this, 'Option_noverify'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_debug', __('Debug mode:', c_bid_text_domain), array(&$this, 'Option_debug'), 'browserid', 'plugin_main');
 		}
@@ -775,14 +810,6 @@ if (!class_exists('M66BrowserID')) {
 			echo "<input id='browserid_logout_html' name='browserid_options[browserid_logout_html]' type='text' size='100' value='{$options['browserid_logout_html']}' />";
 		}
 
-		// Should new users be created automatically with the 
-		// email address for the username.
-		function Option_auto_create_new_users() {
-			$options = get_option('browserid_options');
-			$chk = (isset($options['browserid_auto_create_new_users']) && $options['browserid_auto_create_new_users'] ? " checked='checked'" : '');
-			echo "<input id='browserid_auto_create_new_users' name='browserid_options[browserid_auto_create_new_users]' type='checkbox'" . $chk. "/>";
-		}
-
 		// New user redir URL option
 		function Option_newuser_redir() {
 			$options = get_option('browserid_options');
@@ -791,6 +818,19 @@ if (!class_exists('M66BrowserID')) {
 			echo "<input id='browserid_newuser_redir' name='browserid_options[browserid_newuser_redir]' type='text' size='100' value='{$options['browserid_newuser_redir']}' />";
 			echo '<br />' . __('Default User Profile', c_bid_text_domain);
 		}
+
+		// Get the new user redir URL option
+		function Get_option_newuser_redir() {
+			$options = get_option('browserid_options');
+			if (isset($options['browserid_newuser_redir']) && $options['browserid_newuser_redir']) {
+				$redirect_to = $options['browserid_newuser_redir'];
+			} else {
+				$redirect_to = admin_url() . 'profile.php';
+			}
+
+			return $redirect_to;
+		}
+
 
 		// Login redir URL option
 		function Option_login_redir() {
@@ -801,12 +841,26 @@ if (!class_exists('M66BrowserID')) {
 			echo '<br />' . __('Default WordPress dashboard', c_bid_text_domain);
 		}
 
+		// Get the login redir URL
+		function Get_option_login_redir() {
+			$options = get_option('browserid_options');
+			return isset($options['browserid_login_redir']) && $options['browserid_login_redir'];
+		}
+
 		// Enable comments integration
 		function Option_comments() {
 			$options = get_option('browserid_options');
 			$chk = (isset($options['browserid_comments']) && $options['browserid_comments'] ? " checked='checked'" : '');
 			echo "<input id='browserid_comments' name='browserid_options[browserid_comments]' type='checkbox'" . $chk. "/>";
 			echo '<strong>Beta!</strong>';
+		}
+
+		// Can a user leave a comment using BrowserID
+		function Is_option_comments() {
+			$options = get_option('browserid_options');
+
+			return isset($options['browserid_comments']) && 
+						$options['browserid_comments'];
 		}
 
 		// Enable bbPress integration
@@ -816,6 +870,13 @@ if (!class_exists('M66BrowserID')) {
 			echo "<input id='browserid_bbpress' name='browserid_options[browserid_bbpress]' type='checkbox'" . $chk. "/>";
 			echo '<strong>Beta!</strong>';
 			echo '<br />' . __('Enables anonymous posting implicitly', c_bid_text_domain);
+		}
+
+		function Is_option_bbpress() {
+			$options = get_option('browserid_options');
+
+			return isset($options['browserid_bbpress']) && 
+						$options['browserid_bbpress'];
 		}
 
 		// Comment HTML option
@@ -835,12 +896,15 @@ if (!class_exists('M66BrowserID')) {
 			echo '<br />' . __('Default https://verifier.login.persona.org/verify', c_bid_text_domain);
 		}
 
-		// No valid until option
-		function Option_novalid() {
+		function Get_option_vserver() {
 			$options = get_option('browserid_options');
-			$chk = (isset($options['browserid_novalid']) && $options['browserid_novalid'] ? " checked='checked'" : '');
-			echo "<input id='browserid_novalid' name='browserid_options[browserid_novalid]' type='checkbox'" . $chk. "/>";
-			echo '<strong>' . __('Security risk!', c_bid_text_domain) . '</strong>';
+
+			if (isset($options['browserid_vserver']) && $options['browserid_vserver'])
+				$vserver = $options['browserid_vserver'];
+			else
+				$vserver = 'https://verifier.login.persona.org/verify';
+
+			return $vserver;
 		}
 
 		// No SSL verify option
@@ -851,6 +915,11 @@ if (!class_exists('M66BrowserID')) {
 			echo '<strong>' . __('Security risk!', c_bid_text_domain) . '</strong>';
 		}
 
+		function Is_option_noverify() {
+			$options = get_option('browserid_options');
+			return isset($options['browserid_noverify']) && $options['browserid_noverify'];
+		}
+
 		// Debug option
 		function Option_debug() {
 			$options = get_option('browserid_options');
@@ -859,11 +928,24 @@ if (!class_exists('M66BrowserID')) {
 			echo '<strong>' . __('Security risk!', c_bid_text_domain) . '</strong>';
 		}
 
+		// Is the debug option set
+		function Is_option_debug() {
+			$options = get_option('browserid_options');
+			return ((isset($options['browserid_debug']) && $options['browserid_debug']));
+		}
+
 		// Only allow Persona logins
 		function Option_browserid_only_auth() {
 			$options = get_option('browserid_options');
 			$chk = (isset($options['browserid_only_auth']) && $options['browserid_only_auth'] ? " checked='checked'" : '');
 			echo "<input id='browserid_only_auth' name='browserid_options[browserid_only_auth]' type='checkbox'" . $chk. "/>";
+		}
+
+		// Does the site have browserid only authentication enabled.
+		function Is_option_browserid_only_auth() {
+			$options = get_option('browserid_options');
+
+			return isset($options['browserid_only_auth']) && $options['browserid_only_auth'];
 		}
 
 		// Render options page
@@ -880,7 +962,7 @@ if (!class_exists('M66BrowserID')) {
 				</form>
 			</div>
 <?php
-			if ($this->debug) {
+			if (self::Is_option_debug()) {
 				$options = get_option('browserid_options');
 				$request = get_option(c_bid_option_request);
 				$response = get_option(c_bid_option_response);
@@ -961,7 +1043,7 @@ class BrowserID_Widget extends WP_Widget {
 		if (!empty($title))
 			echo $before_title . $title . $after_title;
 
-		echo "<ul><li class='only-child'>" . M66BrowserID::Get_loginout_html() . "</li></ul>";
+		echo "<ul><li class='only-child'>" . MozillaBrowserID::Get_loginout_html() . "</li></ul>";
 		echo $after_widget;
 	}
 
@@ -986,26 +1068,26 @@ class BrowserID_Widget extends WP_Widget {
 }
 
 // Check pre-requisites
-M66BrowserID::Check_prerequisites();
+MozillaBrowserID::Check_prerequisites();
 
 // Start plugin
 global $m66browserid;
 if (empty($m66browserid)) {
-	$m66browserid = new M66BrowserID();
+	$m66browserid = new MozillaBrowserID();
 	register_activation_hook(__FILE__, array(&$m66browserid, 'Activate'));
 }
 
 // Template tag "mozilla_persona"
 if (!function_exists('mozilla_persona')) {
 	function mozilla_persona() {
-		echo M66BrowserID::Get_loginout_html();
+		echo MozillaBrowserID::Get_loginout_html();
 	}
 }
 
 // Template tag "browserid_loginout"
 if (!function_exists('browserid_loginout')) {
 	function browserid_loginout() {
-		echo M66BrowserID::Get_loginout_html();
+		echo MozillaBrowserID::Get_loginout_html();
 	}
 }
 
