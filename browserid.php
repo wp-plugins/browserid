@@ -12,7 +12,7 @@ Original Author URI: http://blog.bokhorst.biz/about/
 */
 
 /*
-	Copyright (c) 2011, 2012, 2013 Marcel Bokhorst
+	Copyright (c) 2011, 2012, 2013 Shane Tomlinson, Marcel Bokhorst
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -56,26 +56,30 @@ if (!class_exists('MozillaBrowserID')) {
 			// Register actions & filters
 			add_action('init', array(&$this, 'Init'), 0);
 
+			// Action link in the plugins page
+			add_filter('plugin_action_links', array(&$this, 'Plugin_action_links_filter'), 10, 2);
+
 
 			// Authentication
-			add_action('set_auth_cookie', array(&$this, 'Set_auth_cookie'));
-			add_action('clear_auth_cookie', array(&$this, 'Clear_auth_cookie'));
-			add_filter('wp_authenticate_user', array(&$this, 'Check_username_password_auth_allowed_allowed'));
-			add_filter('login_message', array(&$this, 'Login_message'));
-			add_action('login_form', array(&$this, 'Login_form'));
+			add_action('set_auth_cookie', array(&$this, 'Set_auth_cookie_action'));
+			add_action('clear_auth_cookie', array(&$this, 'Clear_auth_cookie_action'));
+			add_filter('wp_authenticate_user', array(&$this, 'Wp_authenticate_user_filter'));
+			add_filter('login_message', array(&$this, 'Login_message_filter'));
+			add_action('login_form', array(&$this, 'Login_form_action'));
 
 
 			// Registration
 			if (self::Is_option_browserid_only_auth()) {
-				add_action('register_form', array(&$this, 'Register_form'));
+				add_action('register_form', array(&$this, 'Register_form_action'));
 				add_action('user_register', array(&$this, 'Register_user_register_action'));
-				add_filter('registration_redirect', array(&$this, 'Register_redirect_filter'));
+				add_filter('registration_errors', array(&$this, 'Registration_errors_filter'));
+				add_filter('registration_redirect', array(&$this, 'Registration_redirect_filter'));
 			}
 
 
 			// Lost password
 			if (self::Is_option_browserid_only_auth()) {
-				add_action('lost_password', array(&$this, 'Lost_password_form'));
+				add_action('lost_password', array(&$this, 'Lost_password_action'));
 				add_filter('allow_password_reset', array(&$this, 'Allow_password_reset_filter'));
 				add_filter('show_password_fields', array(&$this, 'Show_password_fields_filter'));
 			}
@@ -83,19 +87,19 @@ if (!class_exists('MozillaBrowserID')) {
 			// Widgets and admin menu
 			add_action('widgets_init', create_function('', 'return register_widget("BrowserID_Widget");'));
 			if (is_admin()) {
-				add_action('admin_menu', array(&$this, 'Admin_menu'));
-				add_action('admin_init', array(&$this, 'Admin_init'));
+				add_action('admin_menu', array(&$this, 'Admin_menu_action'));
+				add_action('admin_init', array(&$this, 'Admin_init_action'));
 			}
 
 			// top toolbar logout button override
-			add_action('admin_bar_menu', array(&$this, 'Admin_toolbar'), 999);
+			add_action('admin_bar_menu', array(&$this, 'Admin_toolbar_action'), 999);
 
 			add_action('http_api_curl', array(&$this, 'http_api_curl'));
 
 			// Comment integration
 			if (self::Is_option_comments()) {
-				add_filter('comment_form_default_fields', array(&$this, 'Comment_form_fields'));
-				add_action('comment_form', array(&$this, 'Comment_form'));
+				add_filter('comment_form_default_fields', array(&$this, 'Comment_form_action_default_fields_filter'));
+				add_action('comment_form', array(&$this, 'Comment_form_action'));
 			}
 
 			// bbPress integration
@@ -127,6 +131,29 @@ if (!class_exists('MozillaBrowserID')) {
 		function Deactivate() {
 			// TODO: delete options
 		}
+
+		// Add a "Settings" link to the plugin list page.
+		function Plugin_action_links_filter($links, $file) {
+			static $this_plugin;
+
+			if (!$this_plugin) {
+				$this_plugin = plugin_basename(__FILE__);
+			}
+
+			if ($file == $this_plugin) {
+				// The "page" query string value must be equal to the slug
+				// of the Settings admin page we defined earlier, which in
+				// this case equals "myplugin-settings".
+				$settings_link = '<a href="' 
+					. get_bloginfo('wpurl') 
+					. '/wp-admin/admin.php?page=' . __FILE__ . '">' 
+					. __('Settings') . '</a>';
+				array_unshift($links, $settings_link);
+			}
+
+			return $links;
+		}
+
 
 		// Initialization
 		function Init() {
@@ -167,21 +194,18 @@ if (!class_exists('MozillaBrowserID')) {
 		}
 
 		// Get the login redirect URL
-		function Get_login_redirect_url($new_user = false) {
+		function Get_login_redirect_url() {
 			// first, if a redirect is specified in the request, use that.
 			// second, if it is a new user and a new user redirect url is 
 			// specified, go there.
 			// third, if if the global login redirect  is specified, use that.
 			// forth, use the admin URL.
 
-			$newuser_redirect_url = self::Get_option_newuser_redir();
 			$option_redirect_url = self::Get_option_login_redir();
 			$request_redirect_url = self::Get_request_redirect_url(); 
 
 			if(!empty($request_redirect_url)) {
 				$redirect_to = $request_redirect_url;
-			} else if($new_user && !empty($newsuer_redirect_url)) {
-				$redirect_to = $newuser_redirect_url;
 			} else if(!empty($option_redirect_url)) {
 				$redirect_to = $option_redirect_url;
 			} else {
@@ -233,7 +257,7 @@ if (!class_exists('MozillaBrowserID')) {
 				else if (self::Is_registration())
 					self::Handle_registration($email);
 				else
-					self::Handle_login($email, false);
+					self::Handle_login($email);
 			}
 		}
 
@@ -248,7 +272,8 @@ if (!class_exists('MozillaBrowserID')) {
 			if (isset($_REQUEST['?browserid_assertion']))
 				$_REQUEST['browserid_assertion'] = $_REQUEST['?browserid_assertion'];
 
-			return $_REQUEST['browserid_assertion'];
+			return isset($_REQUEST['browserid_assertion']) ? 
+					$_REQUEST['browserid_assertion'] : null;
 		}
 
 		function Get_rememberme() {
@@ -382,12 +407,12 @@ if (!class_exists('MozillaBrowserID')) {
 		}
 
 		// Process login
-		function Handle_login($email, $new_user) {
+		function Handle_login($email) {
 			// Login
 			$user = self::Login_by_email($email, self::Get_rememberme());
 			if ($user) {
 				// Beam me up, Scotty!
-				$redirect_to = self::Get_login_redirect_url($new_user);
+				$redirect_to = self::Get_login_redirect_url();
 				$redirect_to = apply_filters('login_redirect', $redirect_to, '', $user);
 				wp_redirect($redirect_to);
 				exit();
@@ -417,6 +442,21 @@ if (!class_exists('MozillaBrowserID')) {
 
 			if ($userdata) {
 				$user = new WP_User($userdata->ID);
+
+				// Check if user/blog is marked as spam. Copied out of user.php
+				if ( is_multisite() ) {
+					// Is user marked as spam?
+					if ( 1 == $user->spam)
+						return new WP_Error('invalid_username', __('<strong>ERROR</strong>: Your account has been marked as a spammer.'));
+
+					// Is a user's blog marked as spam?
+					if ( !is_super_admin( $user->ID ) && isset($user->primary_blog) ) {
+						$details = get_blog_details( $user->primary_blog );
+						if ( is_object( $details ) && $details->spam == 1 )
+							return new WP_Error('blog_suspended', __('Site Suspended.'));
+					}
+				}
+
 				$this->browserid_login = true;
 				wp_set_current_user($userdata->ID, $userdata->user_login);
 				wp_set_auth_cookie($userdata->ID, $rememberme);
@@ -469,7 +509,7 @@ if (!class_exists('MozillaBrowserID')) {
 
 		// Set a cookie that keeps track whether the user signed in 
 		// using BrowserID
-		function Set_auth_cookie($auth_cookie, $expire, $expiration, $user_id, $scheme) {
+		function Set_auth_cookie_action($auth_cookie, $expire, $expiration, $user_id, $scheme) {
 			// Persona should only manage Persona logins. If this is 
 			// a Persona login, keep track of it so that the user is 
 			// not automatically logged out if they log in via other means.
@@ -480,19 +520,19 @@ if (!class_exists('MozillaBrowserID')) {
 			else {
 				// If the user is not logged in via BrowserID, clear the 
 				// cookie.
-				self::Clear_auth_cookie();
+				self::Clear_auth_cookie_action();
 			}
 		}
 
 		// Clear the cookie that keeps track of whether hte user 
 		// signed in using BrowserID
-		function Clear_auth_cookie() {
+		function Clear_auth_cookie_action() {
 			$expire = time() - YEAR_IN_SECONDS;
 			setcookie(c_bid_browserid_login_cookie, ' ', $expire, COOKIEPATH, COOKIE_DOMAIN);
 		}
 
 		// Check whether normal username/password authentication is allowed
-		function Check_username_password_auth_allowed_allowed($user, $password) {
+		function Wp_authenticate_user_filter($user, $password) {
 			if (self::Is_option_browserid_only_auth()) {
 				return new WP_error('invalid_login', 'Only BrowserID logins are allowed');
 			}
@@ -501,19 +541,19 @@ if (!class_exists('MozillaBrowserID')) {
 		}
 
 		// Filter login error message
-		function Login_message($message) {
+		function Login_message_filter($message) {
 			if (isset($_REQUEST['browserid_error']))
 				$message .= '<div id="login_error"><strong>' . htmlentities(stripslashes($_REQUEST['browserid_error'])) . '</strong></div>';
 			return $message;
 		}
 
 		// Add login button to login page
-		function Login_form() {
+		function Login_form_action() {
 			echo '<p>' . self::Get_loginout_html(false) . '<br /><br /></p>';
 		}
 
 		// Add Persona button to registration form and remove the email form.
-		function Register_form() {
+		function Register_form_action() {
 			// Only enable registration via Persona if Persona is the only 
 			// authentication mechanism or else the user will not see the
 			// "check your email" screen.
@@ -524,8 +564,7 @@ if (!class_exists('MozillaBrowserID')) {
 				$html = '<img src="' . self::Get_image_url() . '" style="border: none; vertical-align: middle; margin-right: 5px;" />';
 				echo '<a href="#" onclick="return browserid_register();" title="Mozilla Persona" class="browserid">' . $html  . '</a>';
 
-				echo 
-				'<style>#user_email,[for=user_email],#reg_passmail{display:none;}';
+				echo '<style>#user_email,[for=user_email],#reg_passmail{display:none;}';
 				echo '#wp-submit { position: absolute; left: -9999px !important; }</style>';
 			}
 		}
@@ -534,6 +573,10 @@ if (!class_exists('MozillaBrowserID')) {
 		// process the rest of the form.
 		function Handle_registration($email) {
 			if (self::Is_option_browserid_only_auth()) {
+				// Keep track of whether the user is registering with 
+				// BrowserID. Non BrowserID registrations are disabled in 
+				// BrowserID only auth.
+				$this->user_registering_with_browserid = true;
 				$_POST['user_email'] = $email;
 			}
 		}
@@ -542,11 +585,25 @@ if (!class_exists('MozillaBrowserID')) {
 		// Now that the user is registered, log them in
 		function Register_user_register_action($user_id) {
 			if (self::Is_option_browserid_only_auth()) {
-				self::Login_by_id($user_id, false);
+				return self::Login_by_id($user_id, false);
 			}
 		}
 
-		function Register_redirect_filter($redirect_to) {
+		// Check if traditional registration has been disabled.
+		function Registration_errors_filter($errors) {
+			if (self::Is_option_browserid_only_auth() && 
+					!$this->user_registering_with_browserid) { 
+				$blogname = wp_specialchars_decode(get_option('blogname'), ENT_QUOTES);
+				$errors->add('invalid_registration', 
+						sprintf(__('<strong>ERROR</strong>:  '
+						. '%s uses Mozilla Persona for registration. '
+						. 'Please register using Persona.'), $blogname));
+			}
+
+			return $errors;
+		}
+
+		function Registration_redirect_filter($redirect_to) {
 			if ($redirect_to) return $redirect_to;
 
 			if (self::Is_option_browserid_only_auth()) {
@@ -560,7 +617,7 @@ if (!class_exists('MozillaBrowserID')) {
 
 		// If only BrowserID logins are allowed, a reset password form should 
 		// not be shown.
-		function Lost_password_form() {
+		function Lost_password_action() {
 			if (self::Is_option_browserid_only_auth()) {
 				// The blogname option is escaped with esc_html on the way into the database in sanitize_option
 				// we want to reverse this for the plain text arena of emails.
@@ -588,7 +645,7 @@ if (!class_exists('MozillaBrowserID')) {
 			$id = bbp_get_topic_id();
 			if (empty($id))
 				$id = bbp_get_forum_id();
-			self::Comment_form($id);
+			self::Comment_form_action($id);
 		}
 
 		// Imply anonymous commenting
@@ -597,7 +654,7 @@ if (!class_exists('MozillaBrowserID')) {
 		}
 
 		// Get rid of the email field in the comment form
-		function Comment_form_fields($fields) {
+		function Comment_form_action_default_fields_filter($fields) {
 			if (self::Is_option_comments()) {
 				unset($fields['email']);
 			}
@@ -605,7 +662,7 @@ if (!class_exists('MozillaBrowserID')) {
 		}
 
 		// Add BrowserID to comment form
-		function Comment_form($post_id) {
+		function Comment_form_action($post_id) {
 			if (!is_user_logged_in()) {
 				// Get link content
 				$options = get_option('browserid_options');
@@ -673,7 +730,8 @@ if (!class_exists('MozillaBrowserID')) {
 				// from logging in using the standard authentication mechanism, it 
 				// cleans up the login form a bit.
 				if (self::Is_option_browserid_only_auth()) {
-					$html .= '<style>#user_login, [for=user_login], #user_pass, [for=user_pass], [name=log], [name=pwd] { display: none; }</style>'; 
+					$html .= '<style>#user_login, [for=user_login], #user_pass, [for=user_pass], [name=log], [name=pwd] { display: none; }';
+          $html .= '#wp-submit { position: absolute; left: -9999px !important; }</style>';
 				}
 
 				return $html;
@@ -720,7 +778,7 @@ if (!class_exists('MozillaBrowserID')) {
 		}
 
 		// Override logout on site menu
-		function Admin_toolbar($wp_toolbar) {
+		function Admin_toolbar_action($wp_toolbar) {
 			$logged_in_user = self::Get_browserid_loggedin_user();
 
 			// If the user is signed in via Persona, replace their toolbar logout 
@@ -741,7 +799,7 @@ if (!class_exists('MozillaBrowserID')) {
 
 
 		// Register options page
-		function Admin_menu() {
+		function Admin_menu_action() {
 			if (function_exists('add_options_page'))
 				add_options_page(
 					__('Mozilla Persona', c_bid_text_domain) . ' ' . __('Administration', c_bid_text_domain),
@@ -752,7 +810,7 @@ if (!class_exists('MozillaBrowserID')) {
 		}
 
 		// Define options page
-		function Admin_init() {
+		function Admin_init_action() {
 			register_setting('browserid_options', 'browserid_options', null);
 			add_settings_section('plugin_main', null, array(&$this, 'Options_main'), 'browserid');
 			add_settings_field('browserid_sitename', __('Site name:', c_bid_text_domain), array(&$this, 'Option_sitename'), 'browserid', 'plugin_main');
@@ -760,7 +818,6 @@ if (!class_exists('MozillaBrowserID')) {
 			add_settings_field('browserid_only_auth', __('Disable non-Persona logins:', c_bid_text_domain), array(&$this, 'Option_browserid_only_auth'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_login_html', __('Custom login HTML:', c_bid_text_domain), array(&$this, 'Option_login_html'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_logout_html', __('Custom logout HTML:', c_bid_text_domain), array(&$this, 'Option_logout_html'), 'browserid', 'plugin_main');
-			add_settings_field('browserid_newuser_redir', __('New user redirection URL:', c_bid_text_domain), array(&$this, 'Option_newuser_redir'), 'browserid', 'plugin_main');
 
 			add_settings_field('browserid_login_redir', __('Login redirection URL:', c_bid_text_domain), array(&$this, 'Option_login_redir'), 'browserid', 'plugin_main');
 			add_settings_field('browserid_comments', __('Enable for comments:', c_bid_text_domain), array(&$this, 'Option_comments'), 'browserid', 'plugin_main');
@@ -810,28 +867,6 @@ if (!class_exists('MozillaBrowserID')) {
 			echo "<input id='browserid_logout_html' name='browserid_options[browserid_logout_html]' type='text' size='100' value='{$options['browserid_logout_html']}' />";
 		}
 
-		// New user redir URL option
-		function Option_newuser_redir() {
-			$options = get_option('browserid_options');
-			if (empty($options['browserid_newuser_redir']))
-				$options['browserid_newuser_redir'] = null;
-			echo "<input id='browserid_newuser_redir' name='browserid_options[browserid_newuser_redir]' type='text' size='100' value='{$options['browserid_newuser_redir']}' />";
-			echo '<br />' . __('Default User Profile', c_bid_text_domain);
-		}
-
-		// Get the new user redir URL option
-		function Get_option_newuser_redir() {
-			$options = get_option('browserid_options');
-			if (isset($options['browserid_newuser_redir']) && $options['browserid_newuser_redir']) {
-				$redirect_to = $options['browserid_newuser_redir'];
-			} else {
-				$redirect_to = admin_url() . 'profile.php';
-			}
-
-			return $redirect_to;
-		}
-
-
 		// Login redir URL option
 		function Option_login_redir() {
 			$options = get_option('browserid_options');
@@ -844,7 +879,7 @@ if (!class_exists('MozillaBrowserID')) {
 		// Get the login redir URL
 		function Get_option_login_redir() {
 			$options = get_option('browserid_options');
-			return isset($options['browserid_login_redir']) && $options['browserid_login_redir'];
+			return isset($options['browserid_login_redir']) ? $options['browserid_login_redir'] : null;
 		}
 
 		// Enable comments integration
@@ -852,7 +887,6 @@ if (!class_exists('MozillaBrowserID')) {
 			$options = get_option('browserid_options');
 			$chk = (isset($options['browserid_comments']) && $options['browserid_comments'] ? " checked='checked'" : '');
 			echo "<input id='browserid_comments' name='browserid_options[browserid_comments]' type='checkbox'" . $chk. "/>";
-			echo '<strong>Beta!</strong>';
 		}
 
 		// Can a user leave a comment using BrowserID
