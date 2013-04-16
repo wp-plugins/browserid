@@ -1125,7 +1125,7 @@ if (!function_exists('browserid_loginout')) {
 	}
 }
 
-if (!function_exists('new_user_notification')) {
+if (!function_exists('wp_new_user_notification')) {
 	function wp_new_user_notification($user_id, $plaintext_pass = '') {
 		$user = get_userdata( $user_id );
 
