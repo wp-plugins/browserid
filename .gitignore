@@ -1,2 +1,4 @@
 .svn/
 backup
+locale/*.po
+*.mo
