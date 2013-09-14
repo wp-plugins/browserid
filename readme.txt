@@ -2,8 +2,8 @@
 Contributors: stomlinson, Marcel Bokhorst, M66B
 Tags: security, admin, authentication, access, widget, login, shortcode, comment, comments, discussion, bbPress, bbPress 2.0, browserid, mozilla, persona
 Requires at least: 3.1
-Tested up to: 3.5.1
-Stable tag: 0.45
+Tested up to: 3.6
+Stable tag: 0.46
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.htm
 
@@ -11,20 +11,18 @@ Implementation of Mozilla Persona (BrowserID) for WordPress
 
 == Description ==
 
-[Mozilla Persona](https://login.persona.org/ "Mozilla Persona") is an open source identity system from the [Identity Team](http://identity.mozilla.com/ "Identity Team") at [Mozilla](https://mozilla.org/ "Mozilla").
+[Mozilla Persona](https://login.persona.org/ "Mozilla Persona") is an open source identity system from the [Identity Team](http://identity.mozilla.com/ "Identity Team") at [Mozilla](https://mozilla.org/ "Mozilla"). More information on Persona can be found at [https://login.persona.org/about](https://login.persona.org/about).
 
-"*As a user of Mozilla Persona (BrowserID), you confirm your email addresses once. Then, you can sign into any web site that supports Mozilla Persona with just two clicks.*"
+This plugin allows users to sign up, sign in, and comment on your site using Persona.
 
-This plugin allows users to sign into your site using Mozilla Persona. A widget, shortcode and template tags are provided. Custom login and logout links can be created.
-
-**Beta features:**
-
-* Submit comments with Mozilla Persona
-* [bbPress 2](http://bbpress.org/ "bbPress") integration: create topics / reply with Mozilla Persona
-
-** Reporting problems:**
+** Reporting problems: **
 
 Please report any issues on [GitHub](https://github.com/shane-tomlinson/browserid-wordpress/issues).
+
+** Beta features: **
+
+* [bbPress 2](http://bbpress.org/ "bbPress") integration: create topics / reply with Mozilla Persona
+
 
 == Installation ==
 
@@ -46,9 +44,10 @@ Please report any issues on [GitHub](https://github.com/shane-tomlinson/browseri
 
 == Frequently Asked Questions ==
 
+= Where can I find out more about Persona? =
+https://login.persona.org/about
+
 = What is 'Custom login HTML for?' =
-
-
 Try putting the following into this option:
 
 `<img src="https://login.persona.org/i/persona_sign_in_red.png" />`
@@ -61,8 +60,7 @@ The assertion is verified by the server at https://login.persona.org/verify.
 
 = I get 'Login failed' =
 
-Only users that registered before can login.
-The e-mail address used for Mozilla Persona should match the e-mail address registered with.
+Only users that registered before can login. The e-mail address used for Mozilla Persona should match the e-mail address registered with.
 
 = I get 'Verification failed' =
 
@@ -73,11 +71,6 @@ If there isn't an error message, turn on debug mode to see the complete response
 
 Something went terribly wrong.
 If there isn't an error message, turn on debug mode to see the complete response.
-
-= I get 'Verification invalid' =
-
-Maybe the time of your hosting server is incorrect.
-You could check the option *Do not check valid until time* to solve this.
 
 = Where can I ask questions, report bugs and request features? =
 
@@ -94,7 +87,7 @@ You can write comments on [GitHub](https://github.com/shane-tomlinson/browserid-
 == Getting Involved ==
 
 == Maintainers ==
-* [Shane Tomlinson](https://shanetomlinson.com) - shane@shanetomlinson.com or stomlinson@mozilla.com 
+* [Shane Tomlinson](https://shanetomlinson.com) - shane@shanetomlinson.com or stomlinson@mozilla.com
 * [Marcel Bokhorst](http://blog.bokhorst.biz)
 
 
@@ -113,6 +106,17 @@ Follow these steps to install the development version:
 * Click *Upload* (a link at the top)
 * Click *Choose file* and select the file you downloaded before
 * Click *Install*, then *Activate Plugin*
+
+= 0.46 =
+* New Feature: Use the WordPress color picker when selecting a background color - Thanks @janw-oostendorp!
+* New Feature: Use the WordPress media picker when selecting the site logo, terms of service and privacy policy.
+* New Feature: Automatically convert site logo's into dataURIs so that any site can specify a logo.
+* New Feature: Japanese Translations - Thanks @makotokato!
+* Improvement: Separate general and advanced settings.
+* Improvement: Serve minified Javascript and CSS by default.
+* Improvement: massive refactor to make code easier to browse.
+* Bug Fix: Fix typo in Privacy Policy description - Thanks @KryDos!
+* Bug Fix: Make sure URLs are written to browserid_common.js unescaped.
 
 = 0.45 =
 * New Feature: Russian Translations - Thanks Ruslan Bekenev (@KryDos)!
@@ -331,13 +335,13 @@ Russian, French, Dutch translations. backgroundColor, termsOfService and privacy
 = 0.44 =
 Spanish translations, 8 improvements, 4 bug fixes
 
-= 0.43 = 
+= 0.43 =
 Security improvement, three bug fixes
 
 = 0.42 =
 Revert to v0.37 until update process is figured out
 
-= 0.41 = 
+= 0.41 =
 Bug fix for "missing arguments" error
 
 = 0.40 =
